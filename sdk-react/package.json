@@ -13,7 +13,10 @@
   "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AnimaApp/anima-sdk"
+    "url": "git+https://github.com/AnimaApp/anima-sdk.git"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "vite build",

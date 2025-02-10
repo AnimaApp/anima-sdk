@@ -18,11 +18,12 @@
   "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AnimaApp/anima-sdk"
+    "url": "git+https://github.com/AnimaApp/anima-sdk.git"
   },
   "scripts": {
     "build": "turbo run build",
-    "publish-packages": "turbo run build && changeset version && changeset publish"
+    "publish-github": "export npm_config_registry=https://npm.pkg.github.com && turbo run build && changeset version && changeset publish",
+    "publish-npm": "export npm_config_registry=https://registry.npmjs.org && turbo run build && changeset version && changeset publish"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.2.1",
