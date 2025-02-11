@@ -18,6 +18,7 @@ const CodegenSettingsSchema = z
           "inline_styles",
         ]),
         uiLibrary: z.enum(["mui", "antd", "radix", "shadcn"]).optional(),
+        enableUILibraryTheming: z.boolean().optional(),
       }),
       z.object({
         framework: z.literal("html"),
@@ -41,6 +42,7 @@ export type CodegenSettings = {
     | "inline_styles"
   uiLibrary?: "mui" | "antd" | "radix" | "shadcn";
   enableTranslation?: boolean;
+  enableUILibraryTheming?: boolean;
 };
 
 export const validateSettings = (obj: unknown): CodegenSettings => {
