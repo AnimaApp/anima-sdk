@@ -1,3 +1,4 @@
+import { arrayBufferToBase64 } from "./utils";
 import type {
   AnimaSDKResult,
   GetCodeParams,
@@ -6,6 +7,12 @@ import type {
 import { convertCodegenFilesToAnimaFiles } from "@animaapp/anima-sdk";
 import { EventSource } from "eventsource";
 import { useImmer } from "use-immer";
+
+export type UseAnimaParams = Omit<GetCodeParams, "assetsStorage"> & {
+  assetsStorage?:
+    | GetCodeParams["assetsStorage"]
+    | { strategy: "local"; path: string };
+};
 
 type Status = "idle" | "pending" | "success" | "aborted" | "error";
 
@@ -33,7 +40,10 @@ const defaultProgress: CodegenStatus = {
   },
 };
 
-type StreamMessageByType<T extends StreamCodgenMessage['type']> = Extract<StreamCodgenMessage, { type: T }>;
+type StreamMessageByType<T extends StreamCodgenMessage["type"]> = Extract<
+  StreamCodgenMessage,
+  { type: T }
+>;
 
 export const useAnimaCodegen = ({
   url,
@@ -44,13 +54,24 @@ export const useAnimaCodegen = ({
 }) => {
   const [status, updateStatus] = useImmer<CodegenStatus>(defaultProgress);
 
-  const getCode = async <T = GetCodeParams>(params: T) => {
+  const getCode = async <T extends UseAnimaParams = UseAnimaParams>(
+    params: T
+  ) => {
     updateStatus((draft) => {
       draft.status = "pending";
       draft.error = null;
       draft.result = null;
       draft.tasks = defaultProgress.tasks;
     });
+
+    const initialParams = structuredClone(params);
+
+    if (params.assetsStorage?.strategy === "local") {
+      params.assetsStorage = {
+        strategy: "external",
+        url: params.assetsStorage.path,
+      };
+    }
 
     const es = new EventSource(url, {
       fetch: (url, init) =>
@@ -65,12 +86,11 @@ export const useAnimaCodegen = ({
       result: AnimaSDKResult | null;
       error: Error | null;
     }>((resolve) => {
-
       const result: Partial<AnimaSDKResult> = {};
 
       // Add specific event listeners
-      es.addEventListener('start', (event) => {
-        const message = JSON.parse(event.data) as StreamMessageByType<'start'>;
+      es.addEventListener("start", (event) => {
+        const message = JSON.parse(event.data) as StreamMessageByType<"start">;
         result.sessionId = message.sessionId;
 
         updateStatus((draft) => {
@@ -78,8 +98,10 @@ export const useAnimaCodegen = ({
         });
       });
 
-      es.addEventListener('pre_codegen', (event) => {
-        const message = JSON.parse(event.data) as StreamMessageByType<'pre_codegen'>;
+      es.addEventListener("pre_codegen", (event) => {
+        const message = JSON.parse(
+          event.data
+        ) as StreamMessageByType<"pre_codegen">;
         if (message.message === "Anima model built") {
           updateStatus((draft) => {
             draft.tasks.fetchDesign.status = "finished";
@@ -89,13 +111,15 @@ export const useAnimaCodegen = ({
         }
       });
 
-      es.addEventListener('figma_metadata', (e) => {
-        const message = JSON.parse(e.data) as StreamMessageByType<'figma_metadata'>;
+      es.addEventListener("figma_metadata", (e) => {
+        const message = JSON.parse(
+          e.data
+        ) as StreamMessageByType<"figma_metadata">;
         result.figmaFileName = message.figmaFileName;
         result.figmaSelectedFrameName = message.figmaSelectedFrameName;
       });
 
-      es.addEventListener('aborted', (e) => {
+      es.addEventListener("aborted", () => {
         updateStatus((draft) => {
           draft.status = "aborted";
         });
@@ -105,8 +129,10 @@ export const useAnimaCodegen = ({
         });
       });
 
-      es.addEventListener('generating_code', (e) => {
-        const message = JSON.parse(e.data) as StreamMessageByType<'generating_code'>;
+      es.addEventListener("generating_code", (event) => {
+        const message = JSON.parse(
+          event.data
+        ) as StreamMessageByType<"generating_code">;
         if (message.payload.status === "success") {
           const codegenFiles = message.payload.files as Record<
             string,
@@ -121,22 +147,33 @@ export const useAnimaCodegen = ({
         });
       });
 
-      es.addEventListener('codegen_completed', (e) => {
+      es.addEventListener("codegen_completed", () => {
         updateStatus((draft) => {
           draft.tasks.codeGeneration.status = "finished";
         });
       });
 
-      es.addEventListener('assets_uploaded', (e) => {
+      es.addEventListener("assets_uploaded", () => {
         updateStatus((draft) => {
           draft.tasks.uploadAssets.status = "finished";
         });
       });
 
-      es.addEventListener('error', (e: ErrorEvent | MessageEvent) => {
+      es.addEventListener("assets_list", (event) => {
+        const message = JSON.parse(
+          event.data
+        ) as StreamMessageByType<"assets_list">;
+
+        result.assets = message.payload.assets;
+      });
+
+      // TODO: For some reason, we receive errors even after the `done` event is triggered.
+      es.addEventListener("error", (error: ErrorEvent | MessageEvent) => {
         // Differentiate between an error message from the server and an error event from the EventSource
-        if (e instanceof MessageEvent) {
-          const message = JSON.parse(e.data) as StreamMessageByType<'error'>;
+        if (error instanceof MessageEvent) {
+          const message = JSON.parse(
+            error.data
+          ) as StreamMessageByType<"error">;
           updateStatus((draft) => {
             draft.status = "error";
             draft.error = new Error(message.payload.message);
@@ -148,21 +185,21 @@ export const useAnimaCodegen = ({
           });
         } else {
           // It's an EventSource error (e.g. HTTP error)
-          console.error('EventSource error:', e);
+          console.error("EventSource error:", error);
 
           updateStatus((draft) => {
             draft.status = "error";
-            draft.error = new Error("HTTP error: " + e.message);
+            draft.error = new Error("HTTP error: " + error.message);
           });
 
           resolve({
             result: null,
-            error: new Error("HTTP error: " + e.message),
+            error: new Error("HTTP error: " + error.message),
           });
         }
       });
 
-      es.addEventListener('done', (event) => {
+      es.addEventListener("done", () => {
         updateStatus((draft) => {
           draft.status = "success";
           draft.result = result as AnimaSDKResult;
@@ -173,7 +210,40 @@ export const useAnimaCodegen = ({
     });
 
     try {
-      const { result, error } = await promise;
+      const { result: r, error } = await promise;
+
+      const result = structuredClone(r);
+
+      // Ideally, we should download the assets within the `assets_uploaded` event handler, since it'll improve the performance.
+      // But for some reason, it doesn't work. So, we download the assets here.
+      if (
+        initialParams.assetsStorage?.strategy === "local" &&
+        result?.assets?.length
+      ) {
+        const downloadAssetsPromises = result.assets.map(async (asset) => {
+          const response = await fetch(asset.url);
+          const buffer = await response.arrayBuffer();
+          return {
+            assetName: asset.name,
+            base64: arrayBufferToBase64(buffer),
+          };
+        });
+
+        const assets = await Promise.allSettled(downloadAssetsPromises);
+        for (const assetPromise of assets) {
+          const assetsList: Record<string, string> = {};
+          if (assetPromise.status === "fulfilled") {
+            const { assetName, base64 } = assetPromise.value;
+
+            assetsList[assetName] = base64;
+
+            result.files[`${initialParams.assetsStorage.path}/${assetName}`] = {
+              content: base64,
+              isBinary: true,
+            };
+          }
+        }
+      }
 
       if (error) {
         return { result: null, error };

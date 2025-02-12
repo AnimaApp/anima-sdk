@@ -17,16 +17,22 @@ export type BaseResult = {
 
 export type AnimaSDKResult = BaseResult & {
   files: AnimaFiles;
+  assets?: Array<{ name: string; url: string }>;
 };
 
 export type CodegenResult = BaseResult & {
   files: Record<string, { code: string; type: "code" }>;
 };
 
+export type AssetsStorage =
+  | { strategy: "host" }
+  | { strategy: "external"; url: string };
+
 export type GetCodeParams = {
   fileKey: string;
   figmaToken: string;
   nodesId: string[];
+  assetsStorage?: AssetsStorage;
   settings: CodegenSettings;
 };
 
@@ -36,6 +42,11 @@ export type GetCodeHandler =
       onStart?: ({ sessionId }: { sessionId: string }) => void;
       onPreCodegen?: ({ message }: { message: string }) => void;
       onAssetsUploaded?: () => void;
+      onAssetsList?: ({
+        assets,
+      }: {
+        assets: Array<{ name: string; url: string }>;
+      }) => void;
       onFigmaMetadata?: ({
         figmaFileName,
         figmaSelectedFrameName,
@@ -67,6 +78,10 @@ export type SSECodgenMessage =
   | { type: "generating_code"; payload: any }
   | { type: "codegen_completed" }
   | { type: "assets_uploaded" }
+  | {
+      type: "assets_list";
+      payload: { assets: Array<{ name: string; url: string }> };
+    }
   | { type: "aborted" }
   | { type: "error"; payload: SSECodgenMessageErrorPayload }
   | { type: "done" };

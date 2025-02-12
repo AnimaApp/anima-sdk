@@ -1,13 +1,13 @@
+import { convertCodegenFilesToAnimaFiles } from "./codegenToAnimaFiles";
 import { CodegenError } from "./errors";
 import { validateSettings } from "./settings";
 import {
-  AnimaFiles,
   AnimaSDKResult,
   GetCodeHandler,
   GetCodeParams,
   SSECodgenMessage,
 } from "./types";
-import { convertCodegenFilesToAnimaFiles } from "./codegenToAnimaFiles";
+
 export type Auth =
   | { token: string; teamId: string } // for Anima user, it's mandatory to have an associated team
   | { token: string; userId?: string }; // for users from a 3rd-party client (e.g., Bolt) they may have optionally a user id
@@ -77,6 +77,7 @@ export class Anima {
         fileKey: params.fileKey,
         figmaToken: params.figmaToken,
         nodesId: params.nodesId,
+        assetsStorage: params.assetsStorage,
         language: settings.language,
         framework: settings.framework,
         styling: settings.styling,
@@ -163,6 +164,15 @@ export class Anima {
                 break;
               }
 
+              case "assets_list": {
+                result.assets = data.payload.assets;
+
+                typeof handler === "function"
+                  ? handler(data)
+                  : handler.onAssetsList?.(data.payload);
+                break;
+              }
+
               case "figma_metadata": {
                 result.figmaFileName = data.figmaFileName;
                 result.figmaSelectedFrameName = data.figmaSelectedFrameName;
@@ -170,9 +180,9 @@ export class Anima {
                 typeof handler === "function"
                   ? handler(data)
                   : handler.onFigmaMetadata?.({
-                    figmaFileName: data.figmaFileName,
-                    figmaSelectedFrameName: data.figmaSelectedFrameName,
-                  });
+                      figmaFileName: data.figmaFileName,
+                      figmaSelectedFrameName: data.figmaSelectedFrameName,
+                    });
                 break;
               }
 
@@ -183,7 +193,7 @@ export class Anima {
                 >;
 
                 const files = convertCodegenFilesToAnimaFiles(codegenFiles);
-                
+
                 if (data.payload.status === "success") {
                   result.files = files;
                 }
@@ -191,10 +201,10 @@ export class Anima {
                 typeof handler === "function"
                   ? handler(data)
                   : handler.onGeneratingCode?.({
-                    status: data.payload.status,
-                    progress: data.payload.progress,
-                    files,
-                  });
+                      status: data.payload.status,
+                      progress: data.payload.progress,
+                      files,
+                    });
                 break;
               }
 
