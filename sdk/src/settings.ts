@@ -8,6 +8,7 @@ const CodegenSettingsSchema = z
     z.union([
       z.object({
         framework: z.literal("react"),
+        model: z.string().optional(),
         styling: z.enum([
           "plain_css",
           "css_modules",
@@ -31,6 +32,7 @@ const CodegenSettingsSchema = z
 // We don't use the z.infer method here because the types returned by zod aren't ergonic
 export type CodegenSettings = {
   language?: "typescript" | "javascript";
+  model?: string,
   framework: "react" | "html";
   styling:
     | "plain_css"

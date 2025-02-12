@@ -17,6 +17,7 @@ const { files } = await anima.generateCode({
   nodesId: ["1:2"],
   settings: {
     language: "typescript",
+    model: "gpt-4o-mini",
     framework: "react",
     styling: "css",
   },

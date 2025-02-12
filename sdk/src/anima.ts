@@ -78,6 +78,7 @@ export class Anima {
         figmaToken: params.figmaToken,
         nodesId: params.nodesId,
         language: settings.language,
+        model: settings.model,
         framework: settings.framework,
         styling: settings.styling,
         uiLibrary: settings.uiLibrary,
