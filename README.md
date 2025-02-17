@@ -65,3 +65,7 @@ const { files } = await useAnimaCodegen({
 ```
 
 It downloads all the assets from the client-side and include them in `files` as base64.
+
+# Publishing
+
+CircleCI publishes automatically to GitHub Packages and NPM whenever a commit is merged to the main branch.

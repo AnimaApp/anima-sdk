@@ -1,0 +1,41 @@
+version: 2.1
+setup: true
+
+workflows:
+  publish-workflow:
+    jobs:
+      - publish:
+          context: anima-prod
+          filters:
+            branches:
+              only: main
+
+jobs:
+  publish:
+    docker:
+      - image: cimg/node:18.20.3
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            corepack enable || sudo corepack enable
+            yarn
+      - run:
+          name: Set .npmrc for NPM publish
+          command: |
+            echo "@animaapp:registry=https://registry.npmjs.org" >> .npmrc
+            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
+      - run:
+          name: Publish to NPM
+          command: yarn publish
+      - run:
+          name: Set .npmrc for GitHub Packages publish
+          command: |
+            rm .npmrc
+
+            echo "@animaapp:registry=https://npm.pkg.github.com" >> .npmrc
+            echo "//npm.pkg.github.com/:_authToken=$GITHUB_PACKAGE_TOKEN" >> .npmrc
+      - run:
+          name: Publish to GitHub Packages
+          command: yarn publish
