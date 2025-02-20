@@ -8,10 +8,12 @@ import { convertCodegenFilesToAnimaFiles } from "@animaapp/anima-sdk";
 import { EventSource } from "eventsource";
 import { useImmer } from "use-immer";
 
+type LocalAssetsStorage =
+  | { strategy: "local"; path: string }
+  | { strategy: "local"; filePath: string; referencePath: string };
+
 export type UseAnimaParams = Omit<GetCodeParams, "assetsStorage"> & {
-  assetsStorage?:
-    | GetCodeParams["assetsStorage"]
-    | { strategy: "local"; path: string };
+  assetsStorage?: GetCodeParams["assetsStorage"] | LocalAssetsStorage;
 };
 
 type Status = "idle" | "pending" | "success" | "aborted" | "error";
@@ -45,6 +47,26 @@ type StreamMessageByType<T extends StreamCodgenMessage["type"]> = Extract<
   { type: T }
 >;
 
+const getAssetsLocalStrategyParams = (
+  localAssetsStorage: LocalAssetsStorage
+) => {
+  if ("path" in localAssetsStorage) {
+    return {
+      filePath: localAssetsStorage.path.replace(/^\//, ""),
+      referencePath:
+        localAssetsStorage.path === "/" ? "" : localAssetsStorage.path, // Workaround to avoid duplicated slashes in the URL. Ideally, the fix should be done in Codegen.
+    };
+  }
+
+  return {
+    filePath: localAssetsStorage.filePath.replace(/^\//, ""),
+    referencePath:
+      localAssetsStorage.referencePath === "/"
+        ? ""
+        : localAssetsStorage.referencePath,
+  };
+};
+
 export const useAnimaCodegen = ({
   url,
   method = "POST",
@@ -67,9 +89,13 @@ export const useAnimaCodegen = ({
     const initialParams = structuredClone(params);
 
     if (params.assetsStorage?.strategy === "local") {
+      const { referencePath } = getAssetsLocalStrategyParams(
+        params.assetsStorage
+      );
+
       params.assetsStorage = {
         strategy: "external",
-        url: params.assetsStorage.path,
+        url: referencePath,
       };
     }
 
@@ -220,6 +246,10 @@ export const useAnimaCodegen = ({
         initialParams.assetsStorage?.strategy === "local" &&
         result?.assets?.length
       ) {
+        const { filePath } = getAssetsLocalStrategyParams(
+          initialParams.assetsStorage
+        );
+
         const downloadAssetsPromises = result.assets.map(async (asset) => {
           const response = await fetch(asset.url);
           const buffer = await response.arrayBuffer();
@@ -237,7 +267,8 @@ export const useAnimaCodegen = ({
 
             assetsList[assetName] = base64;
 
-            result.files[`${initialParams.assetsStorage.path}/${assetName}`] = {
+            const assetPath = filePath ? `${filePath}/${assetName}` : assetName;
+            result.files[assetPath] = {
               content: base64,
               isBinary: true,
             };

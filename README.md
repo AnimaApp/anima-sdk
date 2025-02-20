@@ -60,11 +60,22 @@ If you are using `useAnimaCodegen` from `@animaapp/anima-sdk-react`, you have on
 
 ```ts
 const { files } = await useAnimaCodegen({
-  assetsStorage: { strategy: "local", path: "/" },
+  assetsStorage: { strategy: "local", filePath: "public/assets", referencePath: "/" },
+});
+
+// or
+
+const { files } = await useAnimaCodegen({
+  assetsStorage: {
+    strategy: "local",
+    path: "/" // equivalent of `{ filePath: "/", referencePath: "/" }`
+  },
 });
 ```
 
 It downloads all the assets from the client-side and include them in `files` as base64.
+
+The property `filePath` defines where the files are stored in the project, and `referencePath` defines the base path when the source references for a file (e.g., the `src` attribute from `<img />`). If both values are equal, you can use just `path`.
 
 # Publishing
 
