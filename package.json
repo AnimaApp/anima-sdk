@@ -22,7 +22,9 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "publish": "turbo run build && changeset publish --access public"
+    "publish": "turbo run build && changeset publish --access public",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
   },
   "dependencies": {
     "@changesets/cli": "^2.27.12",
@@ -34,6 +36,7 @@
     "@typescript-eslint/parser": "^6.9.1",
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.28.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-unused-imports": "^3.0.0",
     "turbo": "^2.4.0",
     "typescript": "^5.7.3"
