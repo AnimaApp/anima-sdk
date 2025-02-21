@@ -71,13 +71,18 @@ export const isFigmaTokenIssue = (error: Error) => {
   );
 };
 
-export const handleFigmaApiError = (error: any, fileKey: string) => {
+export type FigmaApiError = {
+  cause?: { body?: { status?: number; reason?: string } };
+  body?: { status?: number; reason?: string };
+};
+
+export const handleFigmaApiError = (error: FigmaApiError, fileKey: string) => {
   const err = error?.cause?.body || error.body;
 
   if (err?.status === 403) {
     throw new FigmaTokenIssue({
       fileKey,
-      reason: error?.cause?.body || error.body,
+      reason: (error?.cause?.body?.reason || error.body?.reason || "Access denied").toString(),
     });
   }
 

@@ -1,6 +1,6 @@
 import type { GetFileResponse, Node } from '@figma/rest-api-spec';
 import { FigmaRestApi } from '@animaapp/http-client-figma';
-import { handleFigmaApiError } from './figmaError';
+import { handleFigmaApiError, type FigmaApiError } from './figmaError';
 
 export type FigmaNode = Node;
 export type GetFileParams = { fileKey: string; authToken?: string; figmaRestApi?: FigmaRestApi };
@@ -10,7 +10,7 @@ export type GetFilePagesParams = {
   fileKey: string;
   authToken?: string;
   figmaRestApi?: FigmaRestApi;
-  params?: Record<string, any>;
+  params?: Record<string, string | number | undefined>;
 };
 export type GetFilePagesResult = FigmaPage[] | undefined;
 export type GetFileNodesParams = {
@@ -18,7 +18,7 @@ export type GetFileNodesParams = {
   authToken?: string;
   nodeIds: string[];
   figmaRestApi?: FigmaRestApi;
-  params?: Record<string, any>;
+  params?: Record<string, string | number>;
 };
 
 export type GetFigmaFileResult = GetFileResponse | undefined;
@@ -68,6 +68,6 @@ export const getFileNodes = async ({
 
     return data.nodes;
   } catch (error) {
-    return handleFigmaApiError(error, fileKey);
+    return handleFigmaApiError(error as FigmaApiError, fileKey);
   }
 };

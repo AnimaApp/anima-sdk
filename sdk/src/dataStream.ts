@@ -37,7 +37,7 @@ export const createCodegenStream = (
             controller.close();
           }
         })
-        .then((result) => {
+        .then((_result) => {
           controller.enqueue({ type: "done" });
           controller.close();
         })

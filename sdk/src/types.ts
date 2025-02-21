@@ -66,6 +66,12 @@ export type GetCodeHandler =
       onCodegenCompleted?: () => void;
     };
 
+export type GeneratingCodePayload = {
+  status: "success" | "running" | "failure";
+  progress: number;
+  files: AnimaFiles;
+};
+
 // TODO: `SSECodgenMessage` and `SSECodgenMessageErrorPayload` should be imported from `anima-public-api`
 export type SSECodgenMessage =
   | { type: "start"; sessionId: string }
@@ -75,7 +81,7 @@ export type SSECodgenMessage =
       figmaFileName: string;
       figmaSelectedFrameName: string;
     }
-  | { type: "generating_code"; payload: any }
+  | { type: "generating_code"; payload: GeneratingCodePayload }
   | { type: "codegen_completed" }
   | { type: "assets_uploaded" }
   | {
