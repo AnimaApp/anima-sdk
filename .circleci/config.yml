@@ -2,6 +2,10 @@ version: 2.1
 setup: true
 
 workflows:
+  checks-workflow:
+    jobs:
+      - lint
+
   publish-workflow:
     jobs:
       - publish:
@@ -11,6 +15,20 @@ workflows:
               only: main
 
 jobs:
+  lint:
+    docker:
+      - image: cimg/node:18.20.3
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            corepack enable || sudo corepack enable
+            yarn
+      - run:
+          name: Run linting
+          command: yarn lint
+
   publish:
     docker:
       - image: cimg/node:18.20.3
