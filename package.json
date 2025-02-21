@@ -22,7 +22,7 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "publish": "turbo run build && changeset publish"
+    "publish": "turbo run build && changeset publish --access public"
   },
   "dependencies": {
     "@changesets/cli": "^2.27.12",

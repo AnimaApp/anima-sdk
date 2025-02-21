@@ -8,7 +8,7 @@ workflows:
           context: anima-prod
           filters:
             branches:
-              only: main
+              only: ci
 
 jobs:
   publish:
