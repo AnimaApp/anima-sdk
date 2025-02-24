@@ -1,4 +1,3 @@
-import { convertCodegenFilesToAnimaFiles } from "./codegenToAnimaFiles";
 import { CodegenError } from "./errors";
 import { validateSettings } from "./settings";
 import {
@@ -188,15 +187,8 @@ export class Anima {
               }
 
               case "generating_code": {
-                const codegenFiles = data.payload.files as Record<
-                  string,
-                  { code: string; type: "code" }
-                >;
-
-                const files = convertCodegenFilesToAnimaFiles(codegenFiles);
-
                 if (data.payload.status === "success") {
-                  result.files = files;
+                  result.files = data.payload.files;
                 }
 
                 typeof handler === "function"
@@ -204,7 +196,7 @@ export class Anima {
                   : handler.onGeneratingCode?.({
                       status: data.payload.status,
                       progress: data.payload.progress,
-                      files,
+                      files: data.payload.files,
                     });
                 break;
               }

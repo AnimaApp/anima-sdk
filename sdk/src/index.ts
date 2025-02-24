@@ -5,4 +5,3 @@ export * from "./utils";
 export * from "./figma";
 export * from "./settings";
 export * from "./dataStream";
-export * from "./codegenToAnimaFiles";

@@ -4,7 +4,6 @@ import type {
   GetCodeParams,
   StreamCodgenMessage,
 } from "@animaapp/anima-sdk";
-import { convertCodegenFilesToAnimaFiles } from "@animaapp/anima-sdk";
 import { EventSource } from "eventsource";
 import { useImmer } from "use-immer";
 
@@ -160,12 +159,7 @@ export const useAnimaCodegen = ({
           event.data
         ) as StreamMessageByType<"generating_code">;
         if (message.payload.status === "success") {
-          const codegenFiles = message.payload.files as Record<
-            string,
-            { code: string; type: "code" }
-          >;
-
-          result.files = convertCodegenFilesToAnimaFiles(codegenFiles);
+          result.files = message.payload.files;
         }
 
         updateStatus((draft) => {
