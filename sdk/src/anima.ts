@@ -9,7 +9,7 @@ import {
 
 export type Auth =
   | { token: string; teamId: string } // for Anima user, it's mandatory to have an associated team
-  | { token: string; userId?: string }; // for users from a 3rd-party client (e.g., Bolt) they may have optionally a user id
+  | { token: string; userId?: string }; // for users from a 3rd-party integrations, they may have optionally a user id
 
 export class Anima {
   #auth?: Auth;
