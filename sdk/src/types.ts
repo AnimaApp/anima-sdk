@@ -13,6 +13,7 @@ export type BaseResult = {
   sessionId: string;
   figmaFileName: string;
   figmaSelectedFrameName: string;
+  tokenUsage: number;
 };
 
 export type AnimaSDKResult = BaseResult & {
