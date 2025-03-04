@@ -20,6 +20,7 @@ const CodegenSettingsSchema = z
         ]),
         uiLibrary: z.enum(["mui", "antd", "radix", "shadcn"]).optional(),
         enableUILibraryTheming: z.boolean().optional(),
+        enableCompactStructure: z.boolean().optional(),
       }),
       z.object({
         framework: z.literal("html"),
@@ -32,7 +33,7 @@ const CodegenSettingsSchema = z
 // We don't use the z.infer method here because the types returned by zod aren't ergonic
 export type CodegenSettings = {
   language?: "typescript" | "javascript";
-  model?: string,
+  model?: string;
   framework: "react" | "html";
   styling:
     | "plain_css"
@@ -41,10 +42,11 @@ export type CodegenSettings = {
     | "tailwind"
     | "sass"
     | "scss"
-    | "inline_styles"
+    | "inline_styles";
   uiLibrary?: "mui" | "antd" | "radix" | "shadcn";
   enableTranslation?: boolean;
   enableUILibraryTheming?: boolean;
+  enableCompactStructure?: boolean;
 };
 
 export const validateSettings = (obj: unknown): CodegenSettings => {

@@ -84,6 +84,7 @@ export class Anima {
         uiLibrary: settings.uiLibrary,
         enableTranslation: settings.enableTranslation,
         enableUILibraryTheming: settings.enableUILibraryTheming,
+        enableCompactStructure: settings.enableCompactStructure,
       }),
     });
 
