@@ -85,6 +85,8 @@ export class Anima {
         enableTranslation: settings.enableTranslation,
         enableUILibraryTheming: settings.enableUILibraryTheming,
         enableCompactStructure: settings.enableCompactStructure,
+        enableAutoSplit: settings.enableAutoSplit,
+        autoSplitThreshold: settings.autoSplitThreshold,
       }),
     });
 

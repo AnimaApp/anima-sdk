@@ -21,6 +21,8 @@ const CodegenSettingsSchema = z
         uiLibrary: z.enum(["mui", "antd", "radix", "shadcn"]).optional(),
         enableUILibraryTheming: z.boolean().optional(),
         enableCompactStructure: z.boolean().optional(),
+        enableAutoSplit: z.boolean().optional(),
+        autoSplitThreshold: z.number().optional(),
       }),
       z.object({
         framework: z.literal("html"),
@@ -47,6 +49,8 @@ export type CodegenSettings = {
   enableTranslation?: boolean;
   enableUILibraryTheming?: boolean;
   enableCompactStructure?: boolean;
+  enableAutoSplit?: boolean;
+  autoSplitThreshold?: number;
 };
 
 export const validateSettings = (obj: unknown): CodegenSettings => {
