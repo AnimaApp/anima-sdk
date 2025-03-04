@@ -38,7 +38,12 @@ export const createCodegenStream = (
           }
         })
         .then((_result) => {
-          controller.enqueue({ type: "done" });
+          controller.enqueue({
+            type: "done", payload: {
+              tokenUsage: _result.tokenUsage,
+              sessionId: _result.sessionId,
+            }
+          });
           controller.close();
         })
         .catch((error) => {

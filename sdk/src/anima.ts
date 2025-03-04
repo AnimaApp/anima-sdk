@@ -225,6 +225,7 @@ export class Anima {
                     reason: "No files found",
                   });
                 }
+                result.tokenUsage = data.payload.tokenUsage;
                 return result as AnimaSDKResult;
               }
             }

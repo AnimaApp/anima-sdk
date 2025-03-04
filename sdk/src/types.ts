@@ -40,32 +40,32 @@ export type GetCodeParams = {
 export type GetCodeHandler =
   | ((message: SSECodgenMessage) => void)
   | {
-      onStart?: ({ sessionId }: { sessionId: string }) => void;
-      onPreCodegen?: ({ message }: { message: string }) => void;
-      onAssetsUploaded?: () => void;
-      onAssetsList?: ({
-        assets,
-      }: {
-        assets: Array<{ name: string; url: string }>;
-      }) => void;
-      onFigmaMetadata?: ({
-        figmaFileName,
-        figmaSelectedFrameName,
-      }: {
-        figmaFileName: string;
-        figmaSelectedFrameName: string;
-      }) => void;
-      onGeneratingCode?: ({
-        status,
-        progress,
-        files,
-      }: {
-        status: "success" | "running" | "failure";
-        progress: number;
-        files: AnimaFiles;
-      }) => void;
-      onCodegenCompleted?: () => void;
-    };
+    onStart?: ({ sessionId }: { sessionId: string }) => void;
+    onPreCodegen?: ({ message }: { message: string }) => void;
+    onAssetsUploaded?: () => void;
+    onAssetsList?: ({
+      assets,
+    }: {
+      assets: Array<{ name: string; url: string }>;
+    }) => void;
+    onFigmaMetadata?: ({
+      figmaFileName,
+      figmaSelectedFrameName,
+    }: {
+      figmaFileName: string;
+      figmaSelectedFrameName: string;
+    }) => void;
+    onGeneratingCode?: ({
+      status,
+      progress,
+      files,
+    }: {
+      status: "success" | "running" | "failure";
+      progress: number;
+      files: AnimaFiles;
+    }) => void;
+    onCodegenCompleted?: () => void;
+  };
 
 export type GeneratingCodePayload = {
   status: "success" | "running" | "failure";
@@ -78,20 +78,20 @@ export type SSECodgenMessage =
   | { type: "start"; sessionId: string }
   | { type: "pre_codegen"; message: string }
   | {
-      type: "figma_metadata";
-      figmaFileName: string;
-      figmaSelectedFrameName: string;
-    }
+    type: "figma_metadata";
+    figmaFileName: string;
+    figmaSelectedFrameName: string;
+  }
   | { type: "generating_code"; payload: GeneratingCodePayload }
   | { type: "codegen_completed" }
   | { type: "assets_uploaded" }
   | {
-      type: "assets_list";
-      payload: { assets: Array<{ name: string; url: string }> };
-    }
+    type: "assets_list";
+    payload: { assets: Array<{ name: string; url: string }> };
+  }
   | { type: "aborted" }
   | { type: "error"; payload: SSECodgenMessageErrorPayload }
-  | { type: "done" };
+  | { type: "done", payload: { sessionId: string, tokenUsage: number } };
 export type SSECodgenMessageErrorPayload = {
   errorName: string;
   task?: string;

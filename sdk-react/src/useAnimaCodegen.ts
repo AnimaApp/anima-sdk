@@ -219,7 +219,12 @@ export const useAnimaCodegen = ({
         }
       });
 
-      es.addEventListener("done", () => {
+      es.addEventListener("done", (event) => {
+        const message = JSON.parse(
+          event.data
+        ) as StreamMessageByType<"done">;
+        result.tokenUsage = message.payload.tokenUsage;
+
         updateStatus((draft) => {
           draft.status = "success";
           draft.result = result as AnimaSDKResult;
