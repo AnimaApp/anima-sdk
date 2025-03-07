@@ -29,12 +29,17 @@ export type AssetsStorage =
   | { strategy: "host" }
   | { strategy: "external"; url: string };
 
+export type TrackingInfos = {
+  externalId: string;
+}
+
 export type GetCodeParams = {
   fileKey: string;
   figmaToken?: string;
   nodesId: string[];
   assetsStorage?: AssetsStorage;
   settings: CodegenSettings;
+  tracking: TrackingInfos;
 };
 
 export type GetCodeHandler =
