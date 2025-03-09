@@ -3,6 +3,7 @@ import { z } from "zod";
 const CodegenSettingsSchema = z
   .object({
     language: z.enum(["typescript", "javascript"]).optional(),
+    disableMarkedForExport: z.boolean().optional(),
   })
   .and(
     z.union([
@@ -51,6 +52,7 @@ export type CodegenSettings = {
   enableCompactStructure?: boolean;
   enableAutoSplit?: boolean;
   autoSplitThreshold?: number;
+  disableMarkedForExport?: boolean;
 };
 
 export const validateSettings = (obj: unknown): CodegenSettings => {

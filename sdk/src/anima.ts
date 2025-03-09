@@ -87,6 +87,7 @@ export class Anima {
         enableCompactStructure: settings.enableCompactStructure,
         enableAutoSplit: settings.enableAutoSplit,
         autoSplitThreshold: settings.autoSplitThreshold,
+        disableMarkedForExport: settings.disableMarkedForExport,
       }),
     });
 
