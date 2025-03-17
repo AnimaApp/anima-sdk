@@ -4,6 +4,7 @@ import type {
   GetCodeParams,
   StreamCodgenMessage,
 } from "@animaapp/anima-sdk";
+import { CodegenError } from "@animaapp/anima-sdk";
 import { EventSource } from "eventsource";
 import { useImmer } from "use-immer";
 
@@ -21,7 +22,7 @@ type TaskStatus = "pending" | "running" | "finished";
 
 type CodegenStatus = {
   status: Status;
-  error: Error | null;
+  error: CodegenError | null;
   result: AnimaSDKResult | null;
   tasks: {
     fetchDesign: { status: TaskStatus };
@@ -98,18 +99,26 @@ export const useAnimaCodegen = ({
       };
     }
 
+    // TODO: We have two workarounds here because of limitations on the `eventsource` package:
+    // 1. We need to use the `fetch` function from the `EventSource` constructor to send the request with the correct method and body (https://github.com/EventSource/eventsource/issues/316#issuecomment-2525315835).
+    // 2. We need to store the last fetch response to handle errors to read its body response, since it isn't expoted by the package (https://github.com/EventSource/eventsource/blob/8aa7057bccd7fb819372a3b2c1292e7b53424d52/src/EventSource.ts#L348-L376)
+    // We might need to use other library, or do it from our self, to improve the code quality.
+    let lastFetchResponse: ReturnType<typeof fetch>;
     const es = new EventSource(url, {
-      fetch: (url, init) =>
-        fetch(url, {
+      fetch: (url, init) => {
+        lastFetchResponse = fetch(url, {
           ...init,
           method,
           body: JSON.stringify(params),
-        }),
+        });
+
+        return lastFetchResponse;
+      },
     });
 
     const promise = new Promise<{
       result: AnimaSDKResult | null;
-      error: Error | null;
+      error: CodegenError | null;
     }>((resolve) => {
       const result: Partial<AnimaSDKResult> = {};
 
@@ -145,12 +154,16 @@ export const useAnimaCodegen = ({
       });
 
       es.addEventListener("aborted", () => {
+        const error = new CodegenError({ name: "Aborted", reason: "Unknown" });
+
         updateStatus((draft) => {
           draft.status = "aborted";
+          (draft.result = null), (draft.error = error);
         });
+
         resolve({
           result: null,
-          error: new Error("The request was aborted"),
+          error,
         });
       });
 
@@ -189,35 +202,34 @@ export const useAnimaCodegen = ({
       });
 
       // TODO: For some reason, we receive errors even after the `done` event is triggered.
-      es.addEventListener("error", (error: ErrorEvent | MessageEvent) => {
-        // Differentiate between an error message from the server and an error event from the EventSource
-        if (error instanceof MessageEvent) {
-          const message = JSON.parse(
-            error.data
-          ) as StreamMessageByType<"error">;
-          updateStatus((draft) => {
-            draft.status = "error";
-            draft.error = new Error(message.payload.message);
-          });
+      es.addEventListener("error", async (error: ErrorEvent | MessageEvent) => {
+        let errorPayload: StreamMessageByType<"error"> | undefined;
 
-          resolve({
-            result: null,
-            error: new Error(message.payload.message),
-          });
-        } else {
-          // It's an EventSource error (e.g. HTTP error)
-          console.error("EventSource error:", error);
+        try {
+          if (error instanceof MessageEvent) {
+            errorPayload = JSON.parse(error.data);
+          } else {
+            const response = await lastFetchResponse;
+            errorPayload = await response.json();
+          }
+        } catch {}
 
-          updateStatus((draft) => {
-            draft.status = "error";
-            draft.error = new Error("HTTP error: " + error.message);
-          });
+        const codegenError = new CodegenError({
+          name: errorPayload?.payload.name ?? "Unknown error",
+          reason: errorPayload?.payload.message ?? "Unknown",
+          status: errorPayload?.payload.status,
+          detail: errorPayload?.payload.detail,
+        });
 
-          resolve({
-            result: null,
-            error: new Error("HTTP error: " + error.message),
-          });
-        }
+        updateStatus((draft) => {
+          draft.status = "error";
+          draft.error = codegenError;
+        });
+
+        resolve({
+          result: null,
+          error: codegenError,
+        });
       });
 
       es.addEventListener("done", (event) => {
@@ -276,13 +288,6 @@ export const useAnimaCodegen = ({
 
       if (error) {
         return { result: null, error };
-      }
-
-      if (Object.keys(result?.files ?? {}).length === 0) {
-        return {
-          result: null,
-          error: new Error("No files received"),
-        };
       }
 
       return { result, error };

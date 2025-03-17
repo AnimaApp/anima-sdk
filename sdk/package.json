@@ -20,7 +20,7 @@
   },
   "scripts": {
     "build": "vite build",
-    "tests": "vitest run --dir ./tests",
+    "dev": "vite build --watch",
     "prepack": "yarn build"
   },
   "dependencies": {

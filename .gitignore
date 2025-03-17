@@ -2,3 +2,5 @@ node_modules
 .yarn
 dist
 .turbo
+.env
+*storybook.log

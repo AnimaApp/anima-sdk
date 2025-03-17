@@ -96,17 +96,41 @@ export class Anima {
     });
 
     if (!response.ok) {
-      let errorMessage;
-      try {
-        const errorData = await response.json();
-        errorMessage =
-          errorData.message || `HTTP error! status: ${response.status}`;
-      } catch {
-        errorMessage = `HTTP error! status: ${response.status}`;
+      const errorData = await response
+        .json()
+        .catch(() => "HTTP error from Anima API");
+
+      if (typeof errorData === "string") {
+        throw new CodegenError({
+          name: errorData,
+          reason: "Unknown",
+          detail: { status: response.status },
+          status: response.status,
+        });
       }
+
+      if (typeof errorData !== "object") {
+        throw new CodegenError({
+          name: `Error "${errorData}"`,
+          reason: "Unknown",
+          detail: { status: response.status },
+          status: response.status,
+        });
+      }
+
+      if (errorData.error?.name === "ZodError") {
+        throw new CodegenError({
+          name: "HTTP error from Anima API",
+          reason: "Invalid body payload",
+          detail: errorData.error.issues,
+          status: response.status,
+        });
+      }
+
       throw new CodegenError({
-        name: "HTTP Error",
-        reason: errorMessage,
+        name: errorData.error?.name || "HTTP error from Anima API",
+        reason: "Unknown",
+        detail: { status: response.status },
         status: response.status,
       });
     }
@@ -223,7 +247,6 @@ export class Anima {
               }
 
               case "error": {
-                // not sure if we want to throw on "stream" errors
                 throw new CodegenError({
                   name: data.payload.errorName,
                   reason: data.payload.reason,
@@ -232,13 +255,12 @@ export class Anima {
 
               case "done": {
                 if (!result.files) {
-                  // not sure if we want to throw on "logical" errors
-                  // I think we should throw only on "HTTP" errors
                   throw new CodegenError({
                     name: "Invalid response",
-                    reason: "No files found",
+                    reason: "No code generated",
                   });
                 }
+
                 result.tokenUsage = data.payload.tokenUsage;
                 return result as AnimaSDKResult;
               }

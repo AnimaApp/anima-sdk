@@ -4,7 +4,15 @@ import type { GetCodeParams, SSECodgenMessage } from "./types";
 
 export type StreamCodgenMessage =
   | Exclude<SSECodgenMessage, { type: "error" }>
-  | { type: "error"; payload: { message: CodegenErrorReason, status?: number } };
+  | {
+      type: "error";
+      payload: {
+        name: string;
+        message: CodegenErrorReason;
+        status?: number;
+        detail?: unknown;
+      };
+    };
 
 /**
  * Start the code generation and creates a ReadableStream to output its result.
@@ -24,11 +32,11 @@ export const createCodegenStream = (
       anima
         .generateCode(params, (message) => {
           if (message.type === "error") {
-            console.log('NOT SURE IF THIS IS REACHABLE, ALL ERRORS ARE THROWING');
-            controller.enqueue({
-              type: "error",
-              payload: { message: message.payload.reason },
-            });
+            // TODO: It's a dead code. It's never reached, since all errors are thrown.
+            // controller.enqueue({
+            //   type: "error",
+            //   payload: { message: message.payload.reason },
+            // });
           } else {
             controller.enqueue(message);
           }
@@ -39,10 +47,11 @@ export const createCodegenStream = (
         })
         .then((_result) => {
           controller.enqueue({
-            type: "done", payload: {
+            type: "done",
+            payload: {
               tokenUsage: _result.tokenUsage,
               sessionId: _result.sessionId,
-            }
+            },
           });
           controller.close();
         })
@@ -50,8 +59,10 @@ export const createCodegenStream = (
           controller.enqueue({
             type: "error",
             payload: {
+              name: "name" in error ? error.name : "Unknown error",
               message: "message" in error ? error.message : "Unknown",
               status: "status" in error ? error.status : undefined,
+              detail: "detail" in error ? error.detail : undefined,
             },
           });
           controller.close();
@@ -81,10 +92,14 @@ export const createCodegenResponseEventStream = async (
   if (
     firstMessage.done ||
     !firstMessage.value ||
-    firstMessage.value?.type === "error" && firstMessage.value?.payload?.status
+    (firstMessage.value?.type === "error" &&
+      firstMessage.value?.payload?.status)
   ) {
     return new Response(JSON.stringify(firstMessage.value), {
-      status: firstMessage.value?.type === "error" ? (firstMessage.value?.payload?.status ?? 500) : 500,
+      status:
+        firstMessage.value?.type === "error"
+          ? (firstMessage.value?.payload?.status ?? 500)
+          : 500,
       headers: {
         "Content-Type": "application/json",
       },
@@ -107,7 +122,7 @@ export const createCodegenResponseEventStream = async (
     status: 200,
     headers: {
       "Content-Type": "text/event-stream; charset=utf-8",
-      "Connection": "keep-alive",
+      Connection: "keep-alive",
       "Cache-Control": "no-cache",
     },
   });

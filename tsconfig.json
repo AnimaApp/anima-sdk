@@ -4,6 +4,7 @@
     "declarationMap": true,
     "declaration": true,
     "composite": true,
+    "jsx": "react-jsx",
     "skipLibCheck": true,
     "strictNullChecks": true,
     "allowJs": true,

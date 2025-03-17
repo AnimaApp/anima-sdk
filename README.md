@@ -8,10 +8,10 @@
 import { Anima } from "@animaapp/anima-sdk";
 
 const anima = new Anima({
-    auth: {
-        token: "Your Anima Token",
-        userId: 'x', // Optional, only used if you want to link the request to an external id
-    },
+  auth: {
+    token: "Your Anima Token",
+    userId: "x", // Optional, only used if you want to link the request to an external id
+  },
 });
 
 const { files } = await anima.generateCode({
@@ -31,6 +31,8 @@ const { files } = await anima.generateCode({
 
 console.log(files); // High-quality React code from your Figma design!
 ```
+
+Check [`example-server`](/example-server) to see a thin example on how to expose an endpoint to call Anima API.
 
 ## Anima SDK for React
 
@@ -66,7 +68,11 @@ If you are using `useAnimaCodegen` from `@animaapp/anima-sdk-react`, you have on
 
 ```ts
 const { files } = await useAnimaCodegen({
-  assetsStorage: { strategy: "local", filePath: "public/assets", referencePath: "/" },
+  assetsStorage: {
+    strategy: "local",
+    filePath: "public/assets",
+    referencePath: "/",
+  },
 });
 
 // or
@@ -74,7 +80,7 @@ const { files } = await useAnimaCodegen({
 const { files } = await useAnimaCodegen({
   assetsStorage: {
     strategy: "local",
-    path: "/" // equivalent of `{ filePath: "/", referencePath: "/" }`
+    path: "/", // equivalent of `{ filePath: "/", referencePath: "/" }`
   },
 });
 ```
@@ -83,6 +89,6 @@ It downloads all the assets from the client-side and include them in `files` as 
 
 The property `filePath` defines where the files are stored in the project, and `referencePath` defines the base path when the source references for a file (e.g., the `src` attribute from `<img />`). If both values are equal, you can use just `path`.
 
-# Publishing
+# Development
 
-CircleCI publishes automatically to GitHub Packages and NPM whenever a commit is merged to the main branch.
+See [`DEVELOPMENT.md`](DEVELOPMENT.md) to learn how to develop the Anima SDK itself - not how to use it on your project.
