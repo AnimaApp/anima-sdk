@@ -2,3 +2,4 @@ src
 github.npmrc
 npm.npmrc
 .npmrc
+.env

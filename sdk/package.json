@@ -1,6 +1,6 @@
 {
   "name": "@animaapp/anima-sdk",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "type": "module",
   "description": "Anima's JavaScript utilities library",
   "author": "Anima App, Inc.",
@@ -22,7 +22,8 @@
     "build": "vite build",
     "dev": "vite build --watch",
     "test": "vitest --watch=false",
-    "prepack": "yarn build"
+    "prepack": "yarn build",
+    "update-design-test-snapshot": "tsx tests/design/update.ts"
   },
   "dependencies": {
     "@animaapp/http-client-figma": "^1.0.2",
@@ -30,6 +31,8 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "dotenv": "^16.4.7",
+    "tsx": "^4.19.3",
     "vite": "^6.0.11",
     "vite-plugin-dts": "^4.5.0",
     "vite-tsconfig-paths": "^5.1.4",

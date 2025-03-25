@@ -31,7 +31,7 @@ export type AssetsStorage =
 
 export type TrackingInfos = {
   externalId: string;
-}
+};
 
 export type GetCodeParams = {
   fileKey: string;

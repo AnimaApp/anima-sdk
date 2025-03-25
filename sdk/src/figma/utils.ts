@@ -1,9 +1,13 @@
-import type { GetFileResponse, Node } from '@figma/rest-api-spec';
-import { FigmaRestApi } from '@animaapp/http-client-figma';
-import { handleFigmaApiError, type FigmaApiError } from './figmaError';
+import type { GetFileResponse, Node } from "@figma/rest-api-spec";
+import { FigmaRestApi } from "@animaapp/http-client-figma";
+import { handleFigmaApiError, type FigmaApiError } from "./figmaError";
 
 export type FigmaNode = Node;
-export type GetFileParams = { fileKey: string; authToken?: string; figmaRestApi?: FigmaRestApi };
+export type GetFileParams = {
+  fileKey: string;
+  authToken?: string;
+  figmaRestApi?: FigmaRestApi;
+};
 
 export type FigmaPage = { id: string; name: string };
 export type GetFilePagesParams = {
@@ -21,14 +25,12 @@ export type GetFileNodesParams = {
   params?: Record<string, string | number>;
 };
 
-export type GetFigmaFileResult = GetFileResponse | undefined;
-
 export const getFigmaFile = async ({
   fileKey,
   authToken,
   figmaRestApi = new FigmaRestApi(),
   params = {},
-}: GetFilePagesParams): Promise<GetFigmaFileResult> => {
+}: GetFilePagesParams): Promise<GetFileResponse> => {
   if (authToken) {
     figmaRestApi.token = authToken;
   }
@@ -41,6 +43,7 @@ export const getFigmaFile = async ({
 
     return rootFile;
   } catch (error) {
+    // TODO: We probably should call `throw handleFigmaApiError(error)`, as we do on `getFilePages`
     console.error(error);
     throw error;
   }
@@ -70,4 +73,24 @@ export const getFileNodes = async ({
   } catch (error) {
     return handleFigmaApiError(error as FigmaApiError, fileKey);
   }
+};
+
+export const findChildrenNode = (
+  node: FigmaNode,
+  targetNodeId: string
+): FigmaNode | null => {
+  if (node.id === targetNodeId) {
+    return node;
+  }
+
+  if ("children" in node) {
+    for (const child of node.children) {
+      const found = findChildrenNode(child, targetNodeId);
+      if (found) {
+        return found;
+      }
+    }
+  }
+
+  return null;
 };

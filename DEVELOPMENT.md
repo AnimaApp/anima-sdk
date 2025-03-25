@@ -28,6 +28,22 @@ yarn dev
 yarn test
 ```
 
+## Testing
+
+### `sdk`
+
+We have a snapshot of a [Figma design for testing](https://www.figma.com/design/5d0u9PmD4GtB5fdX57pTtK/Anima-SDK---Test-File?node-id=0-1&p=f&t=kJLhweCNMscFzELT-11).
+
+Whenever you need to test a different case, you should update this design and update the local snapshot. Steps to do it:
+
+1. Create a `sdk/.env` [following this example](./sdk/example.env).
+
+2. Run this command:
+
+```
+yarn update-design-test-snapshot
+```
+
 ## Publishing
 
 CircleCI publishes automatically to GitHub Packages and NPM whenever a commit is merged to the main branch.
