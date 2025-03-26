@@ -5,7 +5,12 @@ import {
   type GetCodeParams,
   createCodegenResponseEventStream,
 } from "@animaapp/anima-sdk";
-import anima from "./anima.js";
+import getAnima from "./getAnima.js";
+
+type RouteGetCodeParams = GetCodeParams & {
+  animaAccessToken?: string;
+  teamId?: string;
+};
 
 const app = new Hono();
 
@@ -13,7 +18,12 @@ app.use("*", cors());
 
 app.post("/", async (c) => {
   try {
-    const params = (await c.req.json()) as GetCodeParams;
+    const params = (await c.req.json()) as RouteGetCodeParams;
+
+    const anima = getAnima({
+      token: params.animaAccessToken,
+      teamId: params.teamId,
+    });
 
     const response = await createCodegenResponseEventStream(anima, {
       figmaToken: process.env.FIGMA_TOKEN,

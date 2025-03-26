@@ -1,5 +1,5 @@
 /**
- * Errors from Public API
+ * Codegen errors from the worker
  */
 export type CodegenErrorReason =
   | "Selected node type is not supported"
@@ -13,6 +13,18 @@ export type CodegenErrorReason =
   | "Figma file not found"
   | "Figma rate limit exceeded"
   | "Unknown";
+
+/**
+ * Codegen errors from the "/codegen" route
+ */
+export type CodegenRouteErrorReason =
+  | "Missing Authorization header"
+  | "Invalid Authorization header"
+  | "Missing teamId"
+  | "Internal server error"
+  | "Forbidden, no team access"
+  | "Requested Usage Exceeds Limit"
+  | "Invalid Anima token";
 
 /**
  * Errors from the SDK
@@ -34,7 +46,7 @@ export class CodegenError extends Error {
     detail,
   }: {
     name: string;
-    reason: CodegenErrorReason | SDKErrorReason;
+    reason: CodegenErrorReason | CodegenRouteErrorReason | SDKErrorReason;
     status?: number;
     detail?: unknown;
   }) {

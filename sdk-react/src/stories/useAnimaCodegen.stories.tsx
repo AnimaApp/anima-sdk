@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { useAnimaCodegen, UseAnimaParams } from "..";
 
 type Props = {
-  payload: UseAnimaParams;
+  payload: UseAnimaParams & { animaAccessToken?: string };
 };
 
 const DummyComponent = ({ payload }: Props) => {
@@ -147,6 +147,30 @@ export const InvalidBody: Story = {
     payload: {
       // @ts-expect-error: Testing invalid body payload
       fileKey: null,
+      nodesId: ["1:2"],
+      settings: {
+        framework: "react",
+        styling: "plain_css",
+      },
+    },
+  },
+};
+
+export const InvalidJWTTokenFormat: Story = {
+  play: async (context) => {
+    const { error } = await run(context);
+
+    expect(error).toMatchObject({
+      name: "HTTP error from Anima API",
+      message: "Invalid Anima token",
+      status: 401,
+    });
+  },
+
+  args: {
+    payload: {
+      animaAccessToken: "invalid-jwt-token",
+      fileKey: "5d0u9PmD4GtB5fdX57pTtK",
       nodesId: ["1:2"],
       settings: {
         framework: "react",

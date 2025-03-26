@@ -1,5 +1,5 @@
 import { GetFileResponse } from "@figma/rest-api-spec";
-import { CodegenError } from "./errors";
+import { CodegenError, CodegenRouteErrorReason } from "./errors";
 import { getFigmaFile } from "./figma";
 import { validateSettings } from "./settings";
 import {
@@ -142,41 +142,33 @@ export class Anima {
     });
 
     if (!response.ok) {
-      const errorData = await response
-        .json()
-        .catch(() => "HTTP error from Anima API");
+      const errorText = await response.text();
 
-      if (typeof errorData === "string") {
-        throw new CodegenError({
-          name: errorData,
-          reason: "Unknown",
-          detail: { status: response.status },
-          status: response.status,
-        });
-      }
+      let errorObj = undefined;
+      try {
+        errorObj = JSON.parse(errorText);
+      } catch {}
 
-      if (typeof errorData !== "object") {
-        throw new CodegenError({
-          name: `Error "${errorData}"`,
-          reason: "Unknown",
-          detail: { status: response.status },
-          status: response.status,
-        });
-      }
-
-      if (errorData.error?.name === "ZodError") {
+      if (errorObj?.error?.name === "ZodError") {
         throw new CodegenError({
           name: "HTTP error from Anima API",
           reason: "Invalid body payload",
-          detail: errorData.error.issues,
+          detail: errorObj.error.issues,
+          status: response.status,
+        });
+      }
+
+      if (typeof errorObj === "object") {
+        throw new CodegenError({
+          name: `Error "${errorObj}"`,
+          reason: "Unknown",
           status: response.status,
         });
       }
 
       throw new CodegenError({
-        name: errorData.error?.name || "HTTP error from Anima API",
-        reason: "Unknown",
-        detail: { status: response.status },
+        name: "HTTP error from Anima API",
+        reason: errorText as CodegenRouteErrorReason,
         status: response.status,
       });
     }
