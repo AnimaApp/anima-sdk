@@ -1,4 +1,6 @@
+import { GetFileResponse } from "@figma/rest-api-spec";
 import { CodegenError } from "./errors";
+import { getFigmaFile } from "./figma";
 import { validateSettings } from "./settings";
 import {
   AnimaSDKResult,
@@ -6,6 +8,7 @@ import {
   GetCodeParams,
   SSECodgenMessage,
 } from "./types";
+import { isNodeCodegenCompatible } from "./utils/isNodeCodegenCompatible";
 
 export type Auth =
   | { token: string; teamId: string } // for Anima user, it's mandatory to have an associated team
@@ -54,9 +57,52 @@ export class Anima {
     return headers;
   }
 
+  async #checkGivenNodeIsValid(
+    fileKey: string,
+    figmaToken: string,
+    nodesId: string[]
+  ) {
+    let design: GetFileResponse;
+    try {
+      design = await getFigmaFile({
+        fileKey,
+        authToken: figmaToken,
+        params: {
+          geometry: "paths",
+        },
+      });
+    } catch {
+      // ignore all errors when trying to get the figma file to retry later in the backend
+      return;
+    }
+
+    const isCompatibleResults = nodesId.map((nodeId) =>
+      isNodeCodegenCompatible(design, nodeId)
+    );
+
+    const error = isCompatibleResults.find(
+      (isCompatible) => !isCompatible.isValid
+    );
+
+    if (error) {
+      throw new CodegenError({
+        name: "Task Crashed",
+        reason: error.reason,
+      });
+    }
+  }
+
   async generateCode(params: GetCodeParams, handler: GetCodeHandler = {}) {
     if (this.hasAuth() === false) {
       throw new Error('It needs to set "auth" before calling this method.');
+    }
+
+    if (params.figmaToken) {
+      this.#checkGivenNodeIsValid(
+        params.fileKey,
+        params.figmaToken,
+        params.nodesId
+      );
     }
 
     const result: Partial<AnimaSDKResult> = {};
