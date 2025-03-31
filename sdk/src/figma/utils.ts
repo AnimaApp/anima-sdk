@@ -1,6 +1,6 @@
 import type { GetFileResponse, Node } from "@figma/rest-api-spec";
 import { FigmaRestApi } from "@animaapp/http-client-figma";
-import { handleFigmaApiError, type FigmaApiError } from "./figmaError";
+import { wrapFigmaApiError, type FigmaApiError } from "./figmaError";
 
 export type FigmaNode = Node;
 export type GetFileParams = {
@@ -43,9 +43,8 @@ export const getFigmaFile = async ({
 
     return rootFile;
   } catch (error) {
-    // TODO: We probably should call `throw handleFigmaApiError(error)`, as we do on `getFilePages`
     console.error(error);
-    throw error;
+    throw wrapFigmaApiError(error as FigmaApiError, fileKey);
   }
 };
 
@@ -71,7 +70,7 @@ export const getFileNodes = async ({
 
     return data.nodes;
   } catch (error) {
-    return handleFigmaApiError(error as FigmaApiError, fileKey);
+    throw wrapFigmaApiError(error as FigmaApiError, fileKey);
   }
 };
 

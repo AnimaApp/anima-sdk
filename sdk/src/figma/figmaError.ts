@@ -5,11 +5,20 @@ export class FigmaTokenIssue extends Error {
   fileKey: string;
   reason: string;
 
-  constructor({ fileKey, reason }: { fileKey: string; reason: string }) {
+  constructor({
+    fileKey,
+    reason,
+    cause,
+  }: {
+    fileKey: string;
+    reason: string;
+    cause?: unknown;
+  }) {
     super(figmaTokenIssueErrorMessage);
 
     this.fileKey = fileKey;
     this.reason = reason;
+    this.cause = cause;
   }
 }
 
@@ -17,10 +26,11 @@ const rateLimitExceededErrorMessage = "Rate Limit Exceeded";
 export class RateLimitExceeded extends Error {
   fileKey: string;
 
-  constructor({ fileKey }: { fileKey: string }) {
+  constructor({ fileKey, cause }: { fileKey: string; cause?: unknown }) {
     super(rateLimitExceededErrorMessage);
 
     this.fileKey = fileKey;
+    this.cause = cause;
   }
 }
 
@@ -29,10 +39,11 @@ const notFoundErrorMessage = "Not Found";
 export class NotFound extends Error {
   fileKey: string;
 
-  constructor({ fileKey }: { fileKey: string }) {
+  constructor({ fileKey, cause }: { fileKey: string; cause?: unknown }) {
     super(notFoundErrorMessage);
 
     this.fileKey = fileKey;
+    this.cause = cause;
   }
 }
 export const isNotFound = (error: Error) => {
@@ -71,30 +82,37 @@ export const isFigmaTokenIssue = (error: Error) => {
   );
 };
 
+// TODO: It should be replaced with FetchError from HTTP Client
 export type FigmaApiError = {
-  cause?: { body?: { status?: number; reason?: string } };
-  body?: { status?: number; reason?: string };
+  cause: { message?: string; body: { err: string; status: number } };
 };
 
-export const handleFigmaApiError = (error: FigmaApiError, fileKey: string) => {
-  const err = error?.cause?.body || error.body;
+export const wrapFigmaApiError = (
+  error: FigmaApiError,
+  fileKey: string
+): Error => {
+  const isFetchError = error?.cause?.message === "Fetch Error";
+  if (isFetchError) {
+    const { err, status } = error.cause.body;
 
-  if (err?.status === 403) {
-    throw new FigmaTokenIssue({
-      fileKey,
-      reason: (error?.cause?.body?.reason || error.body?.reason || "Access denied").toString(),
-    });
+    if (status === 403) {
+      return new FigmaTokenIssue({
+        fileKey,
+        reason: err,
+        cause: error,
+      });
+    }
+
+    if (status === 429) {
+      return new RateLimitExceeded({ fileKey, cause: error });
+    }
+
+    if (status === 404) {
+      return new NotFound({ fileKey, cause: error });
+    }
   }
 
-  if (err?.status === 429) {
-    throw new RateLimitExceeded({ fileKey });
-  }
-
-  if (err?.status === 404) {
-    throw new NotFound({ fileKey });
-  }
-
-  throw new UnknownFigmaApiException({ fileKey, cause: error });
+  return new UnknownFigmaApiException({ fileKey, cause: error });
 };
 
 export type FigmaApiErrorType =

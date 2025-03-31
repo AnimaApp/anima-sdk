@@ -156,7 +156,7 @@ export const InvalidBody: Story = {
   },
 };
 
-export const InvalidJWTTokenFormat: Story = {
+export const InvalidAnimaJWTTokenFormat: Story = {
   play: async (context) => {
     const { error } = await run(context);
 
