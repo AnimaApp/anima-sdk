@@ -1,6 +1,6 @@
 {
   "name": "@animaapp/anima-sdk-react",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "type": "module",
   "description": "Anima's JavaScript utilities library",
   "author": "Anima App, Inc.",
@@ -25,9 +25,9 @@
     "dev": "storybook dev -p 6006"
   },
   "dependencies": {
-    "eventsource": "^3.0.5",
+    "eventsource": "^3.0.6",
     "immer": "^10.1.1",
-    "swr": "^2.3.2",
+    "swr": "^2.3.3",
     "use-immer": "^0.11.0"
   },
   "peerDependencies": {
@@ -37,20 +37,20 @@
   "devDependencies": {
     "@animaapp/anima-sdk": "workspace:*",
     "@chromatic-com/storybook": "^3",
-    "@storybook/addon-essentials": "^8.6.6",
-    "@storybook/addon-interactions": "^8.6.6",
-    "@storybook/addon-onboarding": "^8.6.6",
-    "@storybook/blocks": "^8.6.6",
-    "@storybook/react": "^8.6.6",
-    "@storybook/react-vite": "^8.6.6",
-    "@storybook/test": "^8.6.6",
+    "@storybook/addon-essentials": "^8.6.11",
+    "@storybook/addon-interactions": "^8.6.11",
+    "@storybook/addon-onboarding": "^8.6.11",
+    "@storybook/blocks": "^8.6.11",
+    "@storybook/react": "^8.6.11",
+    "@storybook/react-vite": "^8.6.11",
+    "@storybook/test": "^8.6.11",
     "@storybook/test-runner": "^0.22.0",
     "@types/prop-types": "^15",
-    "@types/react": "^19.0.10",
+    "@types/react": "^19.0.12",
     "prop-types": "^15.8.1",
-    "storybook": "^8.6.6",
-    "vite": "^6.0.11",
-    "vite-plugin-dts": "^4.5.0",
+    "storybook": "^8.6.11",
+    "vite": "^6.2.4",
+    "vite-plugin-dts": "^4.5.3",
     "vite-tsconfig-paths": "^5.1.4"
   }
 }
