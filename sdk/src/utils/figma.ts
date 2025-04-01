@@ -13,6 +13,11 @@ export const isValidFigmaUrl = (
       return [false, "", ""];
     }
 
+    const reconstructedUrl = url.toString();
+    if (figmaLink !== reconstructedUrl) {
+      return [false, "", ""];
+    }
+
     const nodeId = (url.searchParams.get("node-id") ?? "").replace(/-/g, ":");
     const fileKey = path.split("/")[2];
     const hasCorrectPrefix =

@@ -34,15 +34,23 @@ console.log(files); // High-quality React code from your Figma design!
 
 Check [`example-server`](/example-server) to see a thin example on how to expose an endpoint to call Anima API.
 
+## SDK
+
+### Utils
+
+#### `isValidFigmaUrl`
+
+Check if a given Figma link is a valid design for code generation.
+
 ## Anima SDK for React
 
 We offer an official React package: `@animaapp/anima-sdk-react`.
 
-## Assets Storage
+### Assets Storage
 
 The Figma file may contains assets. You can choose whether to let us host them, or give you the assets links to download then you can host them, or return the assets togheter the source files.
 
-### Have Anima host your assets
+#### Have Anima host your assets
 
 ```ts
 const { files } = await anima.generateCode({
@@ -52,7 +60,7 @@ const { files } = await anima.generateCode({
 
 With the `"host"` strategy, Anima will host the assets files. This is the default strategy.
 
-### Manage your own hosting
+#### Manage your own hosting
 
 ```ts
 const { files, assets } = await anima.generateCode({
@@ -62,7 +70,7 @@ const { files, assets } = await anima.generateCode({
 
 With the `"external"` strategy, the method returns assets in an array of `{ name, url }`. Download each asset from its url and re-upload it at your own hosting.
 
-### Local
+#### Local
 
 If you are using `useAnimaCodegen` from `@animaapp/anima-sdk-react`, you have one additional strategy: `"local"`.
 
@@ -89,6 +97,6 @@ It downloads all the assets from the client-side and include them in `files` as 
 
 The property `filePath` defines where the files are stored in the project, and `referencePath` defines the base path when the source references for a file (e.g., the `src` attribute from `<img />`). If both values are equal, you can use just `path`.
 
-# Development
+## Development
 
 See [`DEVELOPMENT.md`](DEVELOPMENT.md) to learn how to develop the Anima SDK itself - not how to use it on your project.
