@@ -6,7 +6,10 @@ import {
   AnimaSDKResult,
   GetCodeHandler,
   GetCodeParams,
+  GetLink2CodeHandler,
+  GetLink2CodeParams,
   SSECodgenMessage,
+  SSEL2CMessage,
 } from "./types";
 import { isNodeCodegenCompatible } from "./utils/isNodeCodegenCompatible";
 
@@ -147,7 +150,7 @@ export class Anima {
       let errorObj = undefined;
       try {
         errorObj = JSON.parse(errorText);
-      } catch {}
+      } catch { }
 
       if (errorObj?.error?.name === "ZodError") {
         throw new CodegenError({
@@ -256,9 +259,9 @@ export class Anima {
                 typeof handler === "function"
                   ? handler(data)
                   : handler.onFigmaMetadata?.({
-                      figmaFileName: data.figmaFileName,
-                      figmaSelectedFrameName: data.figmaSelectedFrameName,
-                    });
+                    figmaFileName: data.figmaFileName,
+                    figmaSelectedFrameName: data.figmaSelectedFrameName,
+                  });
                 break;
               }
 
@@ -270,14 +273,197 @@ export class Anima {
                 typeof handler === "function"
                   ? handler(data)
                   : handler.onGeneratingCode?.({
-                      status: data.payload.status,
-                      progress: data.payload.progress,
-                      files: data.payload.files,
-                    });
+                    status: data.payload.status,
+                    progress: data.payload.progress,
+                    files: data.payload.files,
+                  });
                 break;
               }
 
               case "codegen_completed": {
+                typeof handler === "function"
+                  ? handler(data)
+                  : handler.onCodegenCompleted?.();
+                break;
+              }
+
+              case "error": {
+                throw new CodegenError({
+                  name: data.payload.errorName,
+                  reason: data.payload.reason,
+                });
+              }
+
+              case "done": {
+                if (!result.files) {
+                  throw new CodegenError({
+                    name: "Invalid response",
+                    reason: "No code generated",
+                  });
+                }
+
+                result.tokenUsage = data.payload.tokenUsage;
+                return result as AnimaSDKResult;
+              }
+            }
+          }
+        }
+      }
+    } finally {
+      reader.cancel();
+    }
+
+    throw new CodegenError({
+      name: "Connection",
+      reason: "Connection closed before the 'done' message",
+      status: 500,
+    });
+  }
+
+  async generateLink2Code(params: GetLink2CodeParams, handler: GetLink2CodeHandler = {}) {
+    if (this.hasAuth() === false) {
+      throw new Error('It needs to set "auth" before calling this method.');
+    }
+
+    const result: Partial<AnimaSDKResult> = {};
+
+    let tracking = params.tracking;
+    if (this.#auth && "userId" in this.#auth && this.#auth.userId) {
+      if (!tracking?.externalId) {
+        tracking = { externalId: this.#auth.userId };
+      }
+    }
+
+    const response = await fetch(`${this.#apiBaseAddress}/v1/l2c`, {
+      method: "POST",
+      headers: {
+        ...this.headers,
+        Accept: "text/event-stream",
+      },
+      body: JSON.stringify({
+        tracking,
+        assetsStorage: params.assetsStorage,
+        params: params.params,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+
+      let errorObj = undefined;
+      try {
+        errorObj = JSON.parse(errorText);
+      } catch { }
+
+      if (errorObj?.error?.name === "ZodError") {
+        throw new CodegenError({
+          name: "HTTP error from Anima API",
+          reason: "Invalid body payload",
+          detail: errorObj.error.issues,
+          status: response.status,
+        });
+      }
+
+      if (typeof errorObj === "object") {
+        throw new CodegenError({
+          name: `Error "${errorObj}"`,
+          reason: "Unknown",
+          status: response.status,
+        });
+      }
+
+      throw new CodegenError({
+        name: "HTTP error from Anima API",
+        reason: errorText as CodegenRouteErrorReason,
+        status: response.status,
+      });
+    }
+
+    if (!response.body) {
+      throw new CodegenError({
+        name: "Stream Error",
+        reason: "Response body is null",
+        status: response.status,
+      });
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+
+        // Process all complete lines
+        buffer = lines.pop() || ""; // Keep the last incomplete line in the buffer
+
+        for (const line of lines) {
+          if (!line.trim() || line.startsWith(":")) continue;
+
+          if (line.startsWith("data: ")) {
+            let data: SSEL2CMessage;
+            try {
+              data = JSON.parse(line.slice(6));
+            } catch {
+              // ignore malformed JSON
+              continue;
+            }
+
+            switch (data.type) {
+              case "queueing": {
+                typeof handler === "function"
+                  ? handler(data)
+                  : handler.onQueueing?.();
+                break;
+              }
+              case "start": {
+                result.sessionId = data.sessionId;
+                typeof handler === "function"
+                  ? handler(data)
+                  : handler.onStart?.({ sessionId: data.sessionId });
+                break;
+              }
+
+              case "assets_uploaded": {
+                typeof handler === "function"
+                  ? handler(data)
+                  : handler.onAssetsUploaded?.();
+                break;
+              }
+
+              case "assets_list": {
+                result.assets = data.payload.assets;
+
+                typeof handler === "function"
+                  ? handler(data)
+                  : handler.onAssetsList?.(data.payload);
+                break;
+              }
+
+              case "generating_code": {
+                if (data.payload.status === "success") {
+                  result.files = data.payload.files;
+                }
+
+                typeof handler === "function"
+                  ? handler(data)
+                  : handler.onGeneratingCode?.({
+                    status: data.payload.status,
+                    progress: data.payload.progress,
+                    files: data.payload.files,
+                  });
+                break;
+              }
+
+              case "generation_completed": {
                 typeof handler === "function"
                   ? handler(data)
                   : handler.onCodegenCompleted?.();

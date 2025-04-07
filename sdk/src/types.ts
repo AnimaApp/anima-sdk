@@ -42,36 +42,66 @@ export type GetCodeParams = {
   tracking?: TrackingInfos;
 };
 
+export type GetLink2CodeParams = {
+  params: unknown;
+  assetsStorage?: AssetsStorage;
+  tracking?: TrackingInfos;
+};
+
 export type GetCodeHandler =
   | ((message: SSECodgenMessage) => void)
   | {
-      onQueueing?: () => void;
-      onStart?: ({ sessionId }: { sessionId: string }) => void;
-      onPreCodegen?: ({ message }: { message: string }) => void;
-      onAssetsUploaded?: () => void;
-      onAssetsList?: ({
-        assets,
-      }: {
-        assets: Array<{ name: string; url: string }>;
-      }) => void;
-      onFigmaMetadata?: ({
-        figmaFileName,
-        figmaSelectedFrameName,
-      }: {
-        figmaFileName: string;
-        figmaSelectedFrameName: string;
-      }) => void;
-      onGeneratingCode?: ({
-        status,
-        progress,
-        files,
-      }: {
-        status: "success" | "running" | "failure";
-        progress: number;
-        files: AnimaFiles;
-      }) => void;
-      onCodegenCompleted?: () => void;
-    };
+    onQueueing?: () => void;
+    onStart?: ({ sessionId }: { sessionId: string }) => void;
+    onPreCodegen?: ({ message }: { message: string }) => void;
+    onAssetsUploaded?: () => void;
+    onAssetsList?: ({
+      assets,
+    }: {
+      assets: Array<{ name: string; url: string }>;
+    }) => void;
+    onFigmaMetadata?: ({
+      figmaFileName,
+      figmaSelectedFrameName,
+    }: {
+      figmaFileName: string;
+      figmaSelectedFrameName: string;
+    }) => void;
+    onGeneratingCode?: ({
+      status,
+      progress,
+      files,
+    }: {
+      status: "success" | "running" | "failure";
+      progress: number;
+      files: AnimaFiles;
+    }) => void;
+    onCodegenCompleted?: () => void;
+  };
+
+
+export type GetLink2CodeHandler =
+  | ((message: SSEL2CMessage) => void)
+  | {
+    onQueueing?: () => void;
+    onStart?: ({ sessionId }: { sessionId: string }) => void;
+    onAssetsUploaded?: () => void;
+    onAssetsList?: ({
+      assets,
+    }: {
+      assets: Array<{ name: string; url: string }>;
+    }) => void;
+    onGeneratingCode?: ({
+      status,
+      progress,
+      files,
+    }: {
+      status: "success" | "running" | "failure";
+      progress: number;
+      files: AnimaFiles;
+    }) => void;
+    onCodegenCompleted?: () => void;
+  };
 
 export type GeneratingCodePayload = {
   status: "success" | "running" | "failure";
@@ -85,20 +115,40 @@ export type SSECodgenMessage =
   | { type: "start"; sessionId: string }
   | { type: "pre_codegen"; message: string }
   | {
-      type: "figma_metadata";
-      figmaFileName: string;
-      figmaSelectedFrameName: string;
-    }
+    type: "figma_metadata";
+    figmaFileName: string;
+    figmaSelectedFrameName: string;
+  }
   | { type: "generating_code"; payload: GeneratingCodePayload }
   | { type: "codegen_completed" }
   | { type: "assets_uploaded" }
   | {
-      type: "assets_list";
-      payload: { assets: Array<{ name: string; url: string }> };
-    }
+    type: "assets_list";
+    payload: { assets: Array<{ name: string; url: string }> };
+  }
   | { type: "aborted" }
   | { type: "error"; payload: SSECodgenMessageErrorPayload }
   | { type: "done"; payload: { sessionId: string; tokenUsage: number } };
+
+
+export type SSEL2CMessage =
+  | { type: 'queueing' }
+  | { type: 'start'; sessionId: string }
+  | { type: 'generating_code'; payload: GeneratingCodePayload }
+  | { type: 'generation_completed' }
+  | { type: 'assets_uploaded' }
+  | { type: 'assets_list'; payload: { assets: Array<{ name: string; url: string }> } }
+  | { type: 'aborted' }
+  | { type: 'error'; payload: SSECodegenMessageErrorPayload }
+  | { type: 'done'; payload: { sessionId: string; tokenUsage: number } };
+
+export type SSECodegenMessageErrorPayload = {
+  errorName: string;
+  task?: string;
+  reason: CodegenErrorReason;
+  sentryTraceId?: string;
+};
+
 export type SSECodgenMessageErrorPayload = {
   errorName: string;
   task?: string;

@@ -187,6 +187,12 @@ export const useAnimaCodegen = ({
         });
       });
 
+      es.addEventListener("generation_completed", () => {
+        updateStatus((draft) => {
+          draft.tasks.codeGeneration.status = "finished";
+        });
+      });
+
       es.addEventListener("assets_uploaded", () => {
         updateStatus((draft) => {
           draft.tasks.uploadAssets.status = "finished";
@@ -212,7 +218,7 @@ export const useAnimaCodegen = ({
             const response = await lastFetchResponse;
             errorPayload = await response.json();
           }
-        } catch {}
+        } catch { }
 
         const codegenError = new CodegenError({
           name: errorPayload?.payload.name ?? "Unknown error",
