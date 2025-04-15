@@ -12,6 +12,7 @@ export type CodegenErrorReason =
   | "Invalid user token"
   | "Figma file not found"
   | "Figma rate limit exceeded"
+  | "Figma selection too large"
   | "Unknown";
 
 /**
