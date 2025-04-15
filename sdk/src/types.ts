@@ -102,6 +102,12 @@ export type SSECodgenMessage =
   | { type: "done"; payload: { sessionId: string; tokenUsage: number } };
 
 
+export type SSECodgenMessageErrorPayload = {
+  errorName: string;
+  task?: string;
+  reason: CodegenErrorReason;
+};
+
 export type SSECodegenMessageErrorPayload = {
   errorName: string;
   task?: string;
@@ -148,9 +154,3 @@ export type SSEL2CMessage =
   | { type: 'aborted' }
   | { type: 'error'; payload: SSECodegenMessageErrorPayload }
   | { type: 'done'; payload: { sessionId: string; tokenUsage: number } };
-
-export type SSECodgenMessageErrorPayload = {
-  errorName: string;
-  task?: string;
-  reason: CodegenErrorReason;
-};
