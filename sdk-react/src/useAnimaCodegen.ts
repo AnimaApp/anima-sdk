@@ -2,6 +2,7 @@ import { arrayBufferToBase64 } from "./utils";
 import type {
   AnimaSDKResult,
   GetCodeParams,
+  GetLink2CodeParams,
   StreamCodgenMessage,
 } from "@animaapp/anima-sdk";
 import { CodegenError } from "@animaapp/anima-sdk";
@@ -12,9 +13,13 @@ type LocalAssetsStorage =
   | { strategy: "local"; path: string }
   | { strategy: "local"; filePath: string; referencePath: string };
 
-export type UseAnimaParams = Omit<GetCodeParams, "assetsStorage"> & {
-  assetsStorage?: GetCodeParams["assetsStorage"] | LocalAssetsStorage;
-};
+export type UseAnimaParams =
+  | (Omit<GetCodeParams, "assetsStorage"> & {
+      assetsStorage?: GetCodeParams["assetsStorage"] | LocalAssetsStorage;
+    })
+  | (Omit<GetLink2CodeParams, "assetsStorage"> & {
+      assetsStorage?: GetLink2CodeParams["assetsStorage"] | LocalAssetsStorage;
+    });
 
 type Status = "idle" | "pending" | "success" | "aborted" | "error";
 
