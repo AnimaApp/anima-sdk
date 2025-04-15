@@ -42,12 +42,6 @@ export type GetCodeParams = {
   tracking?: TrackingInfos;
 };
 
-export type GetLink2CodeParams = {
-  params: unknown;
-  assetsStorage?: AssetsStorage;
-  tracking?: TrackingInfos;
-};
-
 export type GetCodeHandler =
   | ((message: SSECodgenMessage) => void)
   | {
@@ -80,29 +74,6 @@ export type GetCodeHandler =
   };
 
 
-export type GetLink2CodeHandler =
-  | ((message: SSEL2CMessage) => void)
-  | {
-    onQueueing?: () => void;
-    onStart?: ({ sessionId }: { sessionId: string }) => void;
-    onAssetsUploaded?: () => void;
-    onAssetsList?: ({
-      assets,
-    }: {
-      assets: Array<{ name: string; url: string }>;
-    }) => void;
-    onGeneratingCode?: ({
-      status,
-      progress,
-      files,
-    }: {
-      status: "success" | "running" | "failure";
-      progress: number;
-      files: AnimaFiles;
-    }) => void;
-    onCodegenCompleted?: () => void;
-  };
-
 export type GeneratingCodePayload = {
   status: "success" | "running" | "failure";
   progress: number;
@@ -131,6 +102,42 @@ export type SSECodgenMessage =
   | { type: "done"; payload: { sessionId: string; tokenUsage: number } };
 
 
+export type SSECodegenMessageErrorPayload = {
+  errorName: string;
+  task?: string;
+  reason: CodegenErrorReason;
+  sentryTraceId?: string;
+};
+
+export type GetLink2CodeParams = {
+  params: unknown;
+  assetsStorage?: AssetsStorage;
+  tracking?: TrackingInfos;
+};
+
+export type GetLink2CodeHandler =
+  | ((message: SSEL2CMessage) => void)
+  | {
+    onQueueing?: () => void;
+    onStart?: ({ sessionId }: { sessionId: string }) => void;
+    onAssetsUploaded?: () => void;
+    onAssetsList?: ({
+      assets,
+    }: {
+      assets: Array<{ name: string; url: string }>;
+    }) => void;
+    onGeneratingCode?: ({
+      status,
+      progress,
+      files,
+    }: {
+      status: "success" | "running" | "failure";
+      progress: number;
+      files: AnimaFiles;
+    }) => void;
+    onCodegenCompleted?: () => void;
+  };
+
 export type SSEL2CMessage =
   | { type: 'queueing' }
   | { type: 'start'; sessionId: string }
@@ -141,13 +148,6 @@ export type SSEL2CMessage =
   | { type: 'aborted' }
   | { type: 'error'; payload: SSECodegenMessageErrorPayload }
   | { type: 'done'; payload: { sessionId: string; tokenUsage: number } };
-
-export type SSECodegenMessageErrorPayload = {
-  errorName: string;
-  task?: string;
-  reason: CodegenErrorReason;
-  sentryTraceId?: string;
-};
 
 export type SSECodgenMessageErrorPayload = {
   errorName: string;
