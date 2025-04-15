@@ -34,6 +34,18 @@ export class RateLimitExceeded extends Error {
   }
 }
 
+const requestTooLargeMessage = "Request Too Large";
+export class RequestTooLarge extends Error {
+  fileKey: string;
+
+  constructor({ fileKey, cause }: { fileKey: string; cause?: unknown }) {
+    super(requestTooLargeMessage);
+
+    this.fileKey = fileKey;
+    this.cause = cause;
+  }
+}
+
 // Not Found
 const notFoundErrorMessage = "Not Found";
 export class NotFound extends Error {
@@ -82,6 +94,10 @@ export const isFigmaTokenIssue = (error: Error) => {
   );
 };
 
+export const isRequestTooLarge = (error: Error) => {
+  return error.message === requestTooLargeMessage;
+};
+
 // TODO: It should be replaced with FetchError from HTTP Client
 export type FigmaApiError = {
   cause: { message?: string; body: { err: string; status: number } };
@@ -110,6 +126,10 @@ export const wrapFigmaApiError = (
     if (status === 404) {
       return new NotFound({ fileKey, cause: error });
     }
+
+    if (status === 400 && err.includes('Request too large')) {
+      return new RequestTooLarge({ fileKey, cause: error });
+    }
   }
 
   return new UnknownFigmaApiException({ fileKey, cause: error });
@@ -119,7 +139,8 @@ export type FigmaApiErrorType =
   | "FigmaTokenIssue"
   | "RateLimitExceeded"
   | "NotFound"
-  | "UnknownFigmaApiException";
+  | "UnknownFigmaApiException"
+  | "RequestTooLarge";
 
 export const getFigmaApiErrorType = (error: Error): FigmaApiErrorType => {
   if (isNotFound(error)) {
@@ -132,6 +153,10 @@ export const getFigmaApiErrorType = (error: Error): FigmaApiErrorType => {
 
   if (isFigmaTokenIssue(error)) {
     return "FigmaTokenIssue";
+  }
+
+  if (isRequestTooLarge(error)) {
+    return "RequestTooLarge";
   }
 
   return "UnknownFigmaApiException";
