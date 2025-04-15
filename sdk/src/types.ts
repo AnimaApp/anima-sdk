@@ -73,7 +73,6 @@ export type GetCodeHandler =
     onCodegenCompleted?: () => void;
   };
 
-
 export type GeneratingCodePayload = {
   status: "success" | "running" | "failure";
   progress: number;
@@ -115,8 +114,48 @@ export type SSECodegenMessageErrorPayload = {
   sentryTraceId?: string;
 };
 
+export type L2CParamsUrlInput = {
+  type: 'url';
+  url: string;
+};
+
+export type L2CParamsInput = L2CParamsUrlInput;
+
+export type L2CParamsFramework = 'html' | 'react';
+
+export type L2CParamsLanguage = 'typescript';
+
+export type L2CParamsStyling = 'tailwind' | 'inline-styles';
+
+export type L2CParamsHtmlConvention = {
+  framework: 'html';
+  styling: L2CParamsStyling;
+};
+
+export type L2CParamsReactConvention = {
+  framework: 'react';
+  language: L2CParamsLanguage;
+  styling: L2CParamsStyling;
+};
+
+export type L2CParamsConvention =
+  | L2CParamsHtmlConvention
+  | L2CParamsReactConvention;
+
+export type L2CParamsBundledAssetsStorage = {
+  type: 'bundled';
+};
+
+export type L2CParamsAssetsStorage = L2CParamsBundledAssetsStorage;
+
+export type L2CParams = {
+  input: L2CParamsInput;
+  conventions: L2CParamsConvention;
+  assetsStorage: L2CParamsAssetsStorage;
+};
+
 export type GetLink2CodeParams = {
-  params: unknown;
+  params: L2CParams;
   assetsStorage?: AssetsStorage;
   tracking?: TrackingInfos;
 };
