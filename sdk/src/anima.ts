@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { GetFileResponse } from "@figma/rest-api-spec";
 import { CodegenError, CodegenRouteErrorReason } from "./errors";
 import { getFigmaFile } from "./figma";

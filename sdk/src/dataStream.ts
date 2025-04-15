@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Anima } from "./anima";
 import type { CodegenErrorReason } from "./errors";
 import type { GetCodeParams, GetLink2CodeParams, SSECodgenMessage, SSEL2CMessage, SSECodegenMessageErrorPayload } from "./types";
