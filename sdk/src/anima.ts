@@ -320,6 +320,11 @@ export class Anima {
     });
   }
 
+  /**
+   * @experimental
+   * This API is experimental and may change or be removed in future releases.
+   * Link2Code (l2c) flow.
+   */
   async generateLink2Code(params: GetLink2CodeParams, handler: GetLink2CodeHandler = {}) {
     if (this.hasAuth() === false) {
       throw new Error('It needs to set "auth" before calling this method.');

@@ -144,6 +144,10 @@ export const createCodegenResponseEventStream = async (
 };
 
 /**
+ * @experimental
+ * This API is experimental and may change or be removed in future releases.
+ * Link2Code (l2c) stream flow.
+ *
  * Start the URL to code generation and creates a ReadableStream to output its result.
  *
  * The stream is closed when the URL to code generation ends.
