@@ -22,6 +22,8 @@ const CodegenSettingsSchema = z
         uiLibrary: z.enum(["mui", "antd", "radix", "shadcn"]).optional(),
         enableUILibraryTheming: z.boolean().optional(),
         enableCompactStructure: z.boolean().optional(),
+        enableDisplayScreenModelId: z.boolean().optional(),
+        enableGeneratePackageLock: z.boolean().optional(),
         enableAutoSplit: z.boolean().optional(),
         autoSplitThreshold: z.number().optional(),
       }),
@@ -53,6 +55,8 @@ export type CodegenSettings = {
   enableAutoSplit?: boolean;
   autoSplitThreshold?: number;
   disableMarkedForExport?: boolean;
+  enableDisplayScreenModelId?: boolean;
+  enableGeneratePackageLock?: boolean;
 };
 
 export const validateSettings = (obj: unknown): CodegenSettings => {

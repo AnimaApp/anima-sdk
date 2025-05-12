@@ -98,7 +98,7 @@ export class Anima {
 
   /**
    * Generic method to handle API requests and stream processing for both code generation and link2code.
-   * 
+   *
    * @param endpoint - The API endpoint to call
    * @param requestBody - The request body to send
    * @param handler - The handler for processing messages
@@ -109,7 +109,7 @@ export class Anima {
     endpoint: string,
     requestBody: any,
     handler: ((message: T) => void) | Record<string, any>,
-    messageType: 'codegen' | 'l2c'
+    messageType: "codegen" | "l2c"
   ): Promise<AnimaSDKResult> {
     if (this.hasAuth() === false) {
       throw new Error('It needs to set "auth" before calling this method.');
@@ -132,7 +132,7 @@ export class Anima {
       let errorObj = undefined;
       try {
         errorObj = JSON.parse(errorText);
-      } catch { }
+      } catch {}
 
       if (errorObj?.error?.name === "ZodError") {
         throw new CodegenError({
@@ -212,10 +212,12 @@ export class Anima {
               }
 
               case "pre_codegen": {
-                if (messageType === 'codegen') {
+                if (messageType === "codegen") {
                   typeof handler === "function"
                     ? handler(data)
-                    : handler.onPreCodegen?.({ message: (data as any).message });
+                    : handler.onPreCodegen?.({
+                        message: (data as any).message,
+                      });
                 }
                 break;
               }
@@ -237,16 +239,19 @@ export class Anima {
               }
 
               case "figma_metadata": {
-                if (messageType === 'codegen') {
+                if (messageType === "codegen") {
                   result.figmaFileName = (data as any).figmaFileName;
-                  result.figmaSelectedFrameName = (data as any).figmaSelectedFrameName;
+                  result.figmaSelectedFrameName = (
+                    data as any
+                  ).figmaSelectedFrameName;
 
                   typeof handler === "function"
                     ? handler(data)
                     : handler.onFigmaMetadata?.({
-                      figmaFileName: (data as any).figmaFileName,
-                      figmaSelectedFrameName: (data as any).figmaSelectedFrameName,
-                    });
+                        figmaFileName: (data as any).figmaFileName,
+                        figmaSelectedFrameName: (data as any)
+                          .figmaSelectedFrameName,
+                      });
                 }
                 break;
               }
@@ -259,10 +264,10 @@ export class Anima {
                 typeof handler === "function"
                   ? handler(data)
                   : handler.onGeneratingCode?.({
-                    status: (data as any).payload.status,
-                    progress: (data as any).payload.progress,
-                    files: (data as any).payload.files,
-                  });
+                      status: (data as any).payload.status,
+                      progress: (data as any).payload.progress,
+                      files: (data as any).payload.files,
+                    });
                 break;
               }
 
@@ -342,13 +347,15 @@ export class Anima {
       enableAutoSplit: settings.enableAutoSplit,
       autoSplitThreshold: settings.autoSplitThreshold,
       disableMarkedForExport: settings.disableMarkedForExport,
+      enableDisplayScreenModelId: settings.enableDisplayScreenModelId,
+      enableGeneratePackageLock: settings.enableGeneratePackageLock,
     };
 
     return this.#processGenerationRequest<SSECodgenMessage>(
-      '/v1/codegen',
+      "/v1/codegen",
       requestBody,
       handler,
-      'codegen'
+      "codegen"
     );
   }
 
@@ -357,7 +364,10 @@ export class Anima {
    * This API is experimental and may change or be removed in future releases.
    * Link2Code (l2c) flow.
    */
-  async generateLink2Code(params: GetLink2CodeParams, handler: GetLink2CodeHandler = {}) {
+  async generateLink2Code(
+    params: GetLink2CodeParams,
+    handler: GetLink2CodeHandler = {}
+  ) {
     let tracking = params.tracking;
     if (this.#auth && "userId" in this.#auth && this.#auth.userId) {
       if (!tracking?.externalId) {
@@ -372,10 +382,10 @@ export class Anima {
     };
 
     return this.#processGenerationRequest<SSEL2CMessage>(
-      '/v1/l2c',
+      "/v1/l2c",
       requestBody,
       handler,
-      'l2c'
+      "l2c"
     );
   }
 }
