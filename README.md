@@ -20,9 +20,9 @@ const { files } = await anima.generateCode({
   nodesId: ["1:2"],
   settings: {
     language: "typescript",
-    model: "gpt-4o-mini",
     framework: "react",
-    styling: "css",
+    styling: "tailwind",
+    ui_library: "shadcn",
   },
   tracking: {
     externalId: "x", // Optional, used to override the userId from auth, if provided
