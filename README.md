@@ -22,7 +22,7 @@ const { files } = await anima.generateCode({
     language: "typescript",
     framework: "react",
     styling: "tailwind",
-    ui_library: "shadcn",
+    uiLibrary: "shadcn",
   },
   tracking: {
     externalId: "x", // Optional, used to override the userId from auth, if provided
