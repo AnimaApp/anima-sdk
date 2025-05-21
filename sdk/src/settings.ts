@@ -49,13 +49,13 @@ export type CodegenSettings = {
   model?: string;
   framework: "react" | "html";
   styling:
-  | "plain_css"
-  | "css_modules"
-  | "styled_components"
-  | "tailwind"
-  | "sass"
-  | "scss"
-  | "inline_styles";
+    | "plain_css"
+    | "css_modules"
+    | "styled_components"
+    | "tailwind"
+    | "sass"
+    | "scss"
+    | "inline_styles";
   uiLibrary?: "mui" | "antd" | "radix" | "shadcn";
   responsivePages?: Array<{
     name: string;
