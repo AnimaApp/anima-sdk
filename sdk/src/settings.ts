@@ -37,7 +37,7 @@ const CodegenSettingsSchema = z
       }),
       z.object({
         framework: z.literal("html"),
-        styling: z.enum(["plain_css", "inline_styles"]),
+        styling: z.enum(["plain_css", "inline_styles", "tailwind"]),
         enableTranslation: z.boolean().optional(),
       }),
     ])
@@ -49,13 +49,13 @@ export type CodegenSettings = {
   model?: string;
   framework: "react" | "html";
   styling:
-    | "plain_css"
-    | "css_modules"
-    | "styled_components"
-    | "tailwind"
-    | "sass"
-    | "scss"
-    | "inline_styles";
+  | "plain_css"
+  | "css_modules"
+  | "styled_components"
+  | "tailwind"
+  | "sass"
+  | "scss"
+  | "inline_styles";
   uiLibrary?: "mui" | "antd" | "radix" | "shadcn";
   responsivePages?: Array<{
     name: string;
