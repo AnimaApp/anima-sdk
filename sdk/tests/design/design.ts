@@ -735,6 +735,101 @@ export default {
           "type": "NONE",
           "rotation": "NONE"
         }
+      },
+      {
+        "id": "230:2",
+        "name": "Page with no valid node",
+        "type": "CANVAS",
+        "scrollBehavior": "SCROLLS",
+        "children": [
+          {
+            "id": "230:3",
+            "name": "MySection",
+            "type": "SECTION",
+            "scrollBehavior": "SCROLLS",
+            "children": [],
+            "fills": [
+              {
+                "blendMode": "NORMAL",
+                "type": "SOLID",
+                "color": {
+                  "r": 1,
+                  "g": 1,
+                  "b": 1,
+                  "a": 1
+                }
+              }
+            ],
+            "fillGeometry": [
+              {
+                "path": "M0 2C0 0.895429 0.89543 0 2 0L494 0C495.105 0 496 0.89543 496 2L496 494C496 495.105 495.105 496 494 496L2 496C0.895429 496 0 495.105 0 494L0 2Z",
+                "windingRule": "NONZERO"
+              }
+            ],
+            "strokes": [
+              {
+                "opacity": 0.10000000149011612,
+                "blendMode": "NORMAL",
+                "type": "SOLID",
+                "color": {
+                  "r": 0,
+                  "g": 0,
+                  "b": 0,
+                  "a": 1
+                }
+              }
+            ],
+            "strokeWeight": 1,
+            "strokeAlign": "INSIDE",
+            "strokeGeometry": [
+              {
+                "path": "M2 0L2 1L494 1L494 0L494 -1L2 -1L2 0ZM496 2L495 2L495 494L496 494L497 494L497 2L496 2ZM494 496L494 495L2 495L2 496L2 497L494 497L494 496ZM0 494L1 494L1 2L0 2L-1 2L-1 494L0 494ZM2 496L2 495C1.44771 495 1 494.552 1 494L0 494L-1 494C-1 495.657 0.343143 497 2 497L2 496ZM496 494L495 494C495 494.552 494.552 495 494 495L494 496L494 497C495.657 497 497 495.657 497 494L496 494ZM494 0L494 1C494.552 1 495 1.44771 495 2L496 2L497 2C497 0.343147 495.657 -1 494 -1L494 0ZM2 0L2 -1C0.343147 -1 -1 0.343143 -1 2L0 2L1 2C1 1.44771 1.44771 1 2 1L2 0Z",
+                "windingRule": "NONZERO"
+              }
+            ],
+            "absoluteBoundingBox": {
+              "x": -409,
+              "y": -347,
+              "width": 496,
+              "height": 496
+            },
+            "absoluteRenderBounds": {
+              "x": -409,
+              "y": -347,
+              "width": 496,
+              "height": 496
+            },
+            "relativeTransform": [
+              [
+                1,
+                0,
+                -409
+              ],
+              [
+                0,
+                1,
+                -347
+              ]
+            ],
+            "size": {
+              "x": 496,
+              "y": 496
+            },
+            "sectionContentsHidden": false
+          }
+        ],
+        "backgroundColor": {
+          "r": 0.9607843160629272,
+          "g": 0.9607843160629272,
+          "b": 0.9607843160629272,
+          "a": 1
+        },
+        "prototypeStartNodeID": null,
+        "flowStartingPoints": [],
+        "prototypeDevice": {
+          "type": "NONE",
+          "rotation": "NONE"
+        }
       }
     ]
   },
@@ -743,9 +838,9 @@ export default {
   "schemaVersion": 0,
   "styles": {},
   "name": "Anima SDK - Test File",
-  "lastModified": "2025-03-25T11:23:36Z",
-  "thumbnailUrl": "https://s3-alpha.figma.com/thumbnails/5183095e-6741-4cd9-bb4f-f9a716539c93?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQ4GOSFWCT3MRUCDU%2F20250323%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20250323T120000Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=23506f44b297cc21ec4f3b4a7cd6605e209bf69ae8a9dd3ce65593b4580f0e47",
-  "version": "2199410876928073277",
+  "lastModified": "2025-05-22T12:07:25Z",
+  "thumbnailUrl": "https://s3-alpha.figma.com/thumbnails/6f5e6c28-5707-4618-b4af-2f589e475d8b?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQ4GOSFWCRNQJ6QVT%2F20250522%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20250522T000000Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=2702dab6f03ce53d867a9ce250a85d7c116ab3eb497739463f935cb33d7dc2f5",
+  "version": "2220944991999778327",
   "role": "owner",
   "editorType": "figma",
   "linkAccess": "view"

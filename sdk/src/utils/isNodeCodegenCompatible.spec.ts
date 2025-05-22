@@ -48,12 +48,38 @@ describe(".isNodeCodegenCompatible", () => {
   });
 
   describe("when the given node id is a page with multiple valid children", () => {
+    describe("and allowAutoSelectFirstNode is true", () => {
+      it("returns isValid as true and the first valid child node", () => {
+        const result = isNodeCodegenCompatible(design, "0:1");
+        expect(result.isValid).toBe(true);
+        expect((result as any).node.id).toBe("1:2");
+        expect((result as any).note).toBe(
+          "Selected node is a page with multiple valid children - returning the first one instead"
+        );
+      });
+    });
+
+    describe("and allowAutoSelectFirstNode is false", () => {
+      it("returns isValid as false and the proper reason", () => {
+        const result = isNodeCodegenCompatible(design, "0:1", {
+          allowAutoSelectFirstNode: false,
+        });
+
+        expect(result.isValid).toBe(false);
+        expect((result as any).reason).toBe(
+          "Selected node is a page with multiple children"
+        );
+      });
+    });
+  });
+
+  describe("when the given node id is a page with no valid children", () => {
     it("returns isValid as false and the proper reason", () => {
-      const result = isNodeCodegenCompatible(design, "0:1");
+      const result = isNodeCodegenCompatible(design, "230:2");
 
       expect(result.isValid).toBe(false);
       expect((result as any).reason).toBe(
-        "Selected node is a page with multiple children"
+        "Selected node is a page with no valid children"
       );
     });
   });

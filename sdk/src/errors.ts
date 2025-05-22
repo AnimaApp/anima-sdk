@@ -5,6 +5,7 @@ export type CodegenErrorReason =
   | "Selected node type is not supported"
   | "Invisible group nodes are unsupported"
   | "Selected node is a page with multiple children"
+  | "Selected node is a page with no valid children"
   | "There is no node with the given id"
   | "Invalid Figma token"
   | "Anima API connection error"

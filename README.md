@@ -42,19 +42,20 @@ The package `@animaapp/anima-sdk` is designed to run on the backend.
 
 The following options can be passed to the `settings` parameter when calling `generateCode`:
 
-| Option                      | Type                                                                                                       | Description                                                     |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| `language`                  | `"typescript" \| "javascript"`                                                                             | The programming language to use for code generation.            |
-| `framework`                 | `"react" \| "html"`                                                                                        | The framework to use for code generation.                       |
-| `styling`                   | `"plain_css" \| "css_modules" \| "styled_components" \| "tailwind" \| "sass" \| "scss" \| "inline_styles"` | The styling approach to use for the generated code.             |
-| `uiLibrary`                 | `"mui" \| "antd" \| "radix" \| "shadcn"`                                                                   | The UI component library to use (React only).                   |
-| `responsivePages`           | `Array<{ name: string; framesId: string[] }>`                                                              | When set, it overrides any responsive settings from the plugin. |
-| `enableTranslation`         | `boolean`                                                                                                  | Enable translation support (HTML only).                         |
-| `enableCompactStructure`    | `boolean`                                                                                                  | Generate a more compact file structure.                         |
-| `enableAutoSplit`           | `boolean`                                                                                                  | Automatically split components based on complexity.             |
-| `autoSplitThreshold`        | `number`                                                                                                   | The complexity threshold for auto-splitting components.         |
-| `disableMarkedForExport`    | `boolean`                                                                                                  | Disable the "marked for export" feature.                        |
-| `enableGeneratePackageLock` | `boolean`                                                                                                  | Generate package-lock.json file.                                |
+| Option                      | Type                                                                                                       | Description                                                                              |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `language`                  | `"typescript" \| "javascript"`                                                                             | The programming language to use for code generation.                                     |
+| `framework`                 | `"react" \| "html"`                                                                                        | The framework to use for code generation.                                                |
+| `styling`                   | `"plain_css" \| "css_modules" \| "styled_components" \| "tailwind" \| "sass" \| "scss" \| "inline_styles"` | The styling approach to use for the generated code.                                      |
+| `uiLibrary`                 | `"mui" \| "antd" \| "radix" \| "shadcn"`                                                                   | The UI component library to use (React only).                                            |
+| `responsivePages`           | `Array<{ name: string; framesId: string[] }>`                                                              | When set, it overrides any responsive settings from the plugin.                          |
+| `enableTranslation`         | `boolean`                                                                                                  | Enable translation support (HTML only).                                                  |
+| `enableCompactStructure`    | `boolean`                                                                                                  | Generate a more compact file structure.                                                  |
+| `enableAutoSplit`           | `boolean`                                                                                                  | Automatically split components based on complexity.                                      |
+| `autoSplitThreshold`        | `number`                                                                                                   | The complexity threshold for auto-splitting components.                                  |
+| `disableMarkedForExport`    | `boolean`                                                                                                  | Disable the "marked for export" feature.                                                 |
+| `allowAutoSelectFirstNode`  | `boolean`                                                                                                  | Auto-select first valid node when passed a page with multiple children (default: `true`) |
+| `enableGeneratePackageLock` | `boolean`                                                                                                  | Generate package-lock.json file.                                                         |
 
 ### Utils
 

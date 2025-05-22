@@ -4,6 +4,7 @@ const CodegenSettingsSchema = z
   .object({
     language: z.enum(["typescript", "javascript"]).optional(),
     disableMarkedForExport: z.boolean().optional(),
+    allowAutoSelectFirstNode: z.boolean().optional().default(true),
   })
   .and(
     z.union([
@@ -67,6 +68,7 @@ export type CodegenSettings = {
   enableAutoSplit?: boolean;
   autoSplitThreshold?: number;
   disableMarkedForExport?: boolean;
+  allowAutoSelectFirstNode?: boolean;
   enableDisplayScreenModelId?: boolean;
   enableGeneratePackageLock?: boolean;
 };

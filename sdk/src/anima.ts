@@ -64,7 +64,10 @@ export class Anima {
   async #checkGivenNodeIsValid(
     fileKey: string,
     figmaToken: string,
-    nodesId: string[]
+    nodesId: string[],
+    options: {
+      allowAutoSelectFirstNode: boolean;
+    }
   ) {
     let design: GetFileResponse;
     try {
@@ -81,7 +84,7 @@ export class Anima {
     }
 
     const isCompatibleResults = nodesId.map((nodeId) =>
-      isNodeCodegenCompatible(design, nodeId)
+      isNodeCodegenCompatible(design, nodeId, options)
     );
 
     const error = isCompatibleResults.find(
@@ -313,15 +316,16 @@ export class Anima {
   }
 
   async generateCode(params: GetCodeParams, handler: GetCodeHandler = {}) {
+    const settings = validateSettings(params.settings);
+
     if (params.figmaToken) {
       await this.#checkGivenNodeIsValid(
         params.fileKey,
         params.figmaToken,
-        params.nodesId
+        params.nodesId,
+        { allowAutoSelectFirstNode: settings.allowAutoSelectFirstNode ?? true }
       );
     }
-
-    const settings = validateSettings(params.settings);
 
     let tracking = params.tracking;
     if (this.#auth && "userId" in this.#auth && this.#auth.userId) {
@@ -347,6 +351,7 @@ export class Anima {
       enableAutoSplit: settings.enableAutoSplit,
       autoSplitThreshold: settings.autoSplitThreshold,
       disableMarkedForExport: settings.disableMarkedForExport,
+      allowAutoSelectFirstNode: settings.allowAutoSelectFirstNode,
       enableDisplayScreenModelId: settings.enableDisplayScreenModelId,
       enableGeneratePackageLock: settings.enableGeneratePackageLock,
     };
