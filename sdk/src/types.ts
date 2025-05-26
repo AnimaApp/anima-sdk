@@ -136,6 +136,7 @@ export type L2CParamsReactConvention = {
   framework: 'react';
   language: L2CParamsLanguage;
   styling: L2CParamsStyling;
+  enableGeneratePackageLock?: boolean;
 };
 
 export type L2CParamsConvention =

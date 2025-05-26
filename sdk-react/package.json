@@ -1,6 +1,6 @@
 {
   "name": "@animaapp/anima-sdk-react",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "type": "module",
   "description": "Anima's JavaScript utilities library",
   "author": "Anima App, Inc.",
