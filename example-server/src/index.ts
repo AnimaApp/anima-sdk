@@ -22,7 +22,6 @@ app.post("/", async (c) => {
 
     const anima = getAnima({
       token: params.animaAccessToken,
-      teamId: params.teamId,
     });
 
     const response = await createCodegenResponseEventStream(anima, {
