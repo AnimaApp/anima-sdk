@@ -90,7 +90,7 @@ function FigmaNodeExplorer() {
   if (error) return <div>Error loading file: {error.message}</div>;
 
   // Extract top-level node IDs from the document (assuming depth: 2)
-  const pages = shallowFigmaFile?.document?.children ?? [];
+  const pages = data?.document?.children ?? [];
   const topLevelNodeIds = pages.flatMap((page) => page.children).map((frame) => frame.id);
 
   return (
