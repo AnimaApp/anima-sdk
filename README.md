@@ -67,6 +67,47 @@ Check if a given Figma link is a valid design for code generation.
 
 We offer an official React package: `@animaapp/anima-sdk-react`.
 
+### Getting Top-Level Node IDs
+
+To get the top-level node IDs from a Figma file, you can use the `useFigmaFile` hook:
+
+```tsx
+import { useFigmaFile } from "@animaapp/anima-sdk-react";
+
+function FigmaNodeExplorer() {
+  const { data, isLoading, error } = useFigmaFile({
+    fileKey: "your-figma-file-key",
+    authToken: "your-figma-token",
+    params: {
+      depth: 2, // Controls how deep into the document tree to traverse:
+                // depth: 1 - returns only Pages
+                // depth: 2 - returns Pages and all top level objects on each page
+                // omitting depth - returns all nodes (can be resource-intensive for large files)
+    },
+  });
+
+  if (isLoading) return <div>Loading Figma file...</div>;
+  if (error) return <div>Error loading file: {error.message}</div>;
+
+  // Extract top-level node IDs from the document (assuming depth: 2)
+  const pages = shallowFigmaFile?.document?.children ?? [];
+  const topLevelNodeIds = pages.flatMap((page) => page.children).map((frame) => frame.id);
+
+  return (
+    <div>
+      <h3>Top-level Node IDs:</h3>
+      <ul>
+        {topLevelNodeIds.map(nodeId => (
+          <li key={nodeId}>{nodeId}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+These node IDs can then be used in the `nodesId` parameter when calling `generateCode()`.
+
 ### Assets Storage
 
 The Figma file may contains assets. You can choose whether to let us host them, or give you the assets links to download then you can host them, or return the assets togheter the source files.
