@@ -20,7 +20,7 @@ const CodegenSettingsSchema = z
           "scss",
           "inline_styles",
         ]),
-        uiLibrary: z.enum(["mui", "antd", "radix", "shadcn"]).optional(),
+        uiLibrary: z.enum(["mui", "antd", "radix", "shadcn", "clean_react"]).optional(),
         responsivePages: z
           .array(
             z.object({
@@ -58,7 +58,7 @@ export type CodegenSettings = {
     | "sass"
     | "scss"
     | "inline_styles";
-  uiLibrary?: "mui" | "antd" | "radix" | "shadcn";
+  uiLibrary?: "mui" | "antd" | "radix" | "shadcn" | "clean_react";
   responsivePages?: Array<{
     name: string;
     framesId: string[];
