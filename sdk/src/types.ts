@@ -146,6 +146,7 @@ export type L2CParamsConvention =
 export type L2CParamsBundledAssetsStorage = {
   type: 'bundled';
   referencePath?: string;
+  importMode?: 'watermarked' | 'original';
 };
 
 export type L2CParamsAssetsStorage = L2CParamsBundledAssetsStorage;
