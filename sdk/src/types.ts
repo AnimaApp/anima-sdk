@@ -155,6 +155,7 @@ export type L2CParams = {
   input: L2CParamsInput;
   conventions: L2CParamsConvention;
   assetsStorage: L2CParamsAssetsStorage;
+  viewports?: Array<'desktop' | 'tablet' | 'mobile'>;
 };
 
 export type GetLink2CodeParams = {
