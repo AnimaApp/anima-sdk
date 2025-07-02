@@ -246,6 +246,7 @@ export const useAnimaCodegen = ({
       es.addEventListener("done", (event) => {
         const message = JSON.parse(event.data) as StreamMessageByType<"done">;
         result.tokenUsage = message.payload.tokenUsage;
+        result.sessionId = message.payload.sessionId;
 
         updateStatus((draft) => {
           draft.status = "success";

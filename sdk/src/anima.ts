@@ -307,6 +307,7 @@ export class Anima {
                 }
 
                 result.tokenUsage = (data as any).payload.tokenUsage;
+                result.sessionId = (data as any).payload.sessionId;
                 return result as AnimaSDKResult;
               }
             }
