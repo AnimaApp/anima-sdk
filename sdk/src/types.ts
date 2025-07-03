@@ -114,58 +114,15 @@ export type SSECodegenMessageErrorPayload = {
   sentryTraceId?: string;
 };
 
-export type L2CParamsUrlInput = {
-  type: 'url';
+export type GetCodeFromWebsiteParams = {
   url: string;
-};
-
-export type L2CParamsInput = L2CParamsUrlInput;
-
-export type L2CParamsFramework = 'html' | 'react';
-
-export type L2CParamsLanguage = 'typescript';
-
-export type L2CParamsStyling = 'tailwind' | 'inline-styles';
-
-export type L2CParamsHtmlConvention = {
-  framework: 'html';
-  styling: L2CParamsStyling;
-};
-
-export type L2CParamsReactConvention = {
-  framework: 'react';
-  language: L2CParamsLanguage;
-  styling: L2CParamsStyling;
-  enableGeneratePackageLock?: boolean;
-};
-
-export type L2CParamsConvention =
-  | L2CParamsHtmlConvention
-  | L2CParamsReactConvention;
-
-export type L2CParamsBundledAssetsStorage = {
-  type: 'bundled';
-  referencePath?: string;
-  importMode?: 'watermarked' | 'original';
-};
-
-export type L2CParamsAssetsStorage = L2CParamsBundledAssetsStorage;
-
-export type L2CParams = {
-  input: L2CParamsInput;
-  conventions: L2CParamsConvention;
-  assetsStorage: L2CParamsAssetsStorage;
-  viewports?: Array<'desktop' | 'tablet' | 'mobile'>;
-};
-
-export type GetLink2CodeParams = {
-  params: L2CParams;
   assetsStorage?: AssetsStorage;
+  settings: GetCodeFromWebsiteSettings;
   tracking?: TrackingInfos;
 };
 
-export type GetLink2CodeHandler =
-  | ((message: SSEL2CMessage) => void)
+export type GetCodeFromWebsiteHandler =
+  | ((message: SSEGetCodeFromWebsiteMessage) => void)
   | {
     onQueueing?: () => void;
     onStart?: ({ sessionId }: { sessionId: string }) => void;
@@ -187,7 +144,16 @@ export type GetLink2CodeHandler =
     onCodegenCompleted?: () => void;
   };
 
-export type SSEL2CMessage =
+export type GetCodeFromWebsiteSettings = {
+  language?: "typescript";
+  framework: "react" | "html";
+  styling:
+  | "tailwind"
+  | "inline_styles";
+  uiLibrary?: "shadcn";
+};
+
+export type SSEGetCodeFromWebsiteMessage =
   | { type: 'queueing' }
   | { type: 'start'; sessionId: string }
   | { type: 'generating_code'; payload: GeneratingCodePayload }
@@ -197,3 +163,100 @@ export type SSEL2CMessage =
   | { type: 'aborted' }
   | { type: 'error'; payload: SSECodegenMessageErrorPayload }
   | { type: 'done'; payload: { sessionId: string; tokenUsage: number } };
+
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type L2CParamsUrlInput = {
+  type: 'url';
+  url: string;
+};
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type L2CParamsInput = L2CParamsUrlInput;
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type L2CParamsFramework = 'html' | 'react';
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type L2CParamsLanguage = 'typescript';
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type L2CParamsStyling = 'tailwind' | 'inline-styles';
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type L2CParamsHtmlConvention = {
+  framework: 'html';
+  styling: L2CParamsStyling;
+};
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type L2CParamsReactConvention = {
+  framework: 'react';
+  language: L2CParamsLanguage;
+  styling: L2CParamsStyling;
+  enableGeneratePackageLock?: boolean;
+};
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type L2CParamsConvention =
+  | L2CParamsHtmlConvention
+  | L2CParamsReactConvention;
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type L2CParamsBundledAssetsStorage = {
+  type: 'bundled';
+  referencePath?: string;
+  importMode?: 'watermarked' | 'original';
+};
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type L2CParamsAssetsStorage = L2CParamsBundledAssetsStorage;
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type L2CParams = {
+  input: L2CParamsInput;
+  conventions: L2CParamsConvention;
+  assetsStorage: L2CParamsAssetsStorage;
+  viewports?: Array<'desktop' | 'tablet' | 'mobile'>;
+};
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type GetLink2CodeParams = {
+  params: L2CParams;
+  assetsStorage?: AssetsStorage;
+  tracking?: TrackingInfos;
+};
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type GetLink2CodeHandler = GetCodeFromWebsiteHandler;
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type SSEL2CMessage = SSEGetCodeFromWebsiteMessage;

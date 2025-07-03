@@ -4,6 +4,14 @@
 
 > Design to code, automated
 
+The Anima SDK allows you to generate code from:
+* **Figma** -> Converts Figma designs into high-quality code.
+* **Websites** (Early Preview) -> Converts website URLs into high-quality code.
+
+Here are some examples of how to use the Anima SDK to generate code from any Figma design or website.
+
+## Example: Figma to Code
+
 ```ts
 import { Anima } from "@animaapp/anima-sdk";
 
@@ -34,27 +42,58 @@ console.log(files); // High-quality React code from your Figma design!
 
 Check [`example-server`](/example-server) to see a thin example on how to expose an endpoint to call Anima API.
 
+## Example: Website to Code (Early Preview)
+
+```ts
+import { Anima } from "@animaapp/anima-sdk";
+
+const anima = new Anima({
+  auth: {
+    token: "Your Anima Token",
+    userId: "x", // Optional, only used if you want to link the request to an external id
+  },
+});
+
+const { files } = await anima.generateCodeFromWebsite({
+  url: "https://www.example.com", // The URL of the website to convert
+  settings: {
+    framework: "react",
+    language: "typescript",
+    styling: "tailwind",
+  },
+  tracking: {
+    externalId: "x", // Optional, used to override the userId from auth, if provided
+  },
+});
+
+console.log(files); // High-quality React code from your website!
+```
+
+Check [`example-server`](/example-server) to see a thin example on how to expose an endpoint to call Anima API.
+
 ## SDK
 
-The package `@animaapp/anima-sdk` is designed to run on the backend.
+> Note: The package `@animaapp/anima-sdk` is designed to run on the backend.
 
 ### Settings Options
 
-The following options can be passed to the `settings` parameter when calling `generateCode`:
+The following options can be passed to the `settings` parameter when calling `generateCode` or `generateCodeFromWebsite`. 
+
+> Note: Not all options are available for both Figma designs and websites. We will mark the options that are available for each source.
 
 | Option                      | Type                                                                                                       | Description                                                                              |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `language`                  | `"typescript" \| "javascript"`                                                                             | The programming language to use for code generation.                                     |
+| `language`                  | `"typescript" \| "javascript"` <br><br> Note: only `typescript` is currently available for websites.                                                                             | The programming language to use for code generation.                                     |
 | `framework`                 | `"react" \| "html"`                                                                                        | The framework to use for code generation.                                                |
-| `styling`                   | `"plain_css" \| "css_modules" \| "styled_components" \| "tailwind" \| "sass" \| "scss" \| "inline_styles"` | The styling approach to use for the generated code.                                      |
-| `uiLibrary`                 | `"mui" \| "antd" \| "radix" \| "shadcn"`                                                                   | The UI component library to use (React only).                                            |
-| `responsivePages`           | `Array<{ name: string; framesId: string[] }>`                                                              | When set, it overrides any responsive settings from the plugin.                          |
-| `enableTranslation`         | `boolean`                                                                                                  | Enable translation support (HTML only).                                                  |
-| `enableCompactStructure`    | `boolean`                                                                                                  | Generate a more compact file structure.                                                  |
-| `enableAutoSplit`           | `boolean`                                                                                                  | Automatically split components based on complexity.                                      |
-| `autoSplitThreshold`        | `number`                                                                                                   | The complexity threshold for auto-splitting components.                                  |
-| `disableMarkedForExport`    | `boolean`                                                                                                  | Disable the "marked for export" feature.                                                 |
-| `allowAutoSelectFirstNode`  | `boolean`                                                                                                  | Auto-select first valid node when passed a page with multiple children (default: `true`) |
+| `styling`                   | `"plain_css" \| "css_modules" \| "styled_components" \| "tailwind" \| "sass" \| "scss" \| "inline_styles"` <br><br> Note: only `tailwind` is currently available for websites. | The styling approach to use for the generated code.                                      |
+| `uiLibrary`                 | `"mui" \| "antd" \| "radix" \| "shadcn"` <br><br> Note: only `shadcn` is currently available for websites. You can also omit this option to use vanilla React.                                                                   | The UI component library to use (React only).                                            |
+| `responsivePages`           | `Array<{ name: string; framesId: string[] }>` <br><br> Note: only available for Figma designs.                                                              | When set, it overrides any responsive settings from the plugin.                          |
+| `enableTranslation`         | `boolean` <br><br> Note: only available for Figma designs.                                                                                                  | Enable translation support (HTML only).                                                  |
+| `enableCompactStructure`    | `boolean` <br><br> Note: only available for Figma designs.                                                                                                  | Generate a more compact file structure.                                                  |
+| `enableAutoSplit`           | `boolean` <br><br> Note: only available for Figma designs.                                                                                                  | Automatically split components based on complexity.                                      |
+| `autoSplitThreshold`        | `number` <br><br> Note: only available for Figma designs.                                                                                                   | The complexity threshold for auto-splitting components.                                  |
+| `disableMarkedForExport`    | `boolean` <br><br> Note: only available for Figma designs.                                                                                                  | Disable the "marked for export" feature.                                                 |
+| `allowAutoSelectFirstNode`  | `boolean` <br><br> Note: only available for Figma designs.                                                                                                  | Auto-select first valid node when passed a page with multiple children (default: `true`) |
 | `enableGeneratePackageLock` | `boolean`                                                                                                  | Generate package-lock.json file.                                                         |
 
 ### Utils
@@ -110,7 +149,9 @@ These node IDs can then be used in the `nodesId` parameter when calling `generat
 
 ### Assets Storage
 
-The Figma file may contains assets. You can choose whether to let us host them, or give you the assets links to download then you can host them, or return the assets togheter the source files.
+The generated code may contain assets. You can choose whether to let us host them, or give you the assets links to download then you can host them, or return the assets together with the source files.
+
+> Note: Website imports currently only support the `host` and `external` strategies.
 
 #### Have Anima host your assets
 

@@ -5,11 +5,14 @@ import { getFigmaFile } from "./figma";
 import { validateSettings } from "./settings";
 import {
   AnimaSDKResult,
+  GetCodeFromWebsiteHandler,
+  GetCodeFromWebsiteParams,
   GetCodeHandler,
   GetCodeParams,
   GetLink2CodeHandler,
   GetLink2CodeParams,
   SSECodgenMessage,
+  SSEGetCodeFromWebsiteMessage,
   SSEL2CMessage,
 } from "./types";
 import { isNodeCodegenCompatible } from "./utils/isNodeCodegenCompatible";
@@ -68,7 +71,7 @@ export class Anima {
     options: {
       allowAutoSelectFirstNode: boolean;
     },
-    signal?: AbortSignal,
+    signal?: AbortSignal
   ) {
     let design: GetFileResponse;
     try {
@@ -91,11 +94,11 @@ export class Anima {
     }
 
     const isCompatibleResults = nodesId.map((nodeId) =>
-      isNodeCodegenCompatible(design, nodeId, options),
+      isNodeCodegenCompatible(design, nodeId, options)
     );
 
     const error = isCompatibleResults.find(
-      (isCompatible) => !isCompatible.isValid,
+      (isCompatible) => !isCompatible.isValid
     );
 
     if (error) {
@@ -120,7 +123,7 @@ export class Anima {
     requestBody: any,
     handler: ((message: T) => void) | Record<string, any>,
     messageType: "codegen" | "l2c",
-    signal?: AbortSignal,
+    signal?: AbortSignal
   ): Promise<AnimaSDKResult> {
     if (this.hasAuth() === false) {
       throw new Error('It needs to set "auth" before calling this method.');
@@ -328,7 +331,7 @@ export class Anima {
   async generateCode(
     params: GetCodeParams,
     handler: GetCodeHandler = {},
-    signal?: AbortSignal,
+    signal?: AbortSignal
   ) {
     const settings = validateSettings(params.settings);
 
@@ -338,7 +341,7 @@ export class Anima {
         params.figmaToken,
         params.nodesId,
         { allowAutoSelectFirstNode: settings.allowAutoSelectFirstNode ?? true },
-        signal,
+        signal
       );
     }
 
@@ -377,19 +380,57 @@ export class Anima {
       requestBody,
       handler,
       "codegen",
-      signal,
+      signal
+    );
+  }
+
+  async generateCodeFromWebsite(
+    params: GetCodeFromWebsiteParams,
+    handler: GetCodeFromWebsiteHandler = {},
+    signal?: AbortSignal
+  ) {
+    let tracking = params.tracking;
+    if (this.#auth && "userId" in this.#auth && this.#auth.userId) {
+      if (!tracking?.externalId) {
+        tracking = { externalId: this.#auth.userId };
+      }
+    }
+
+    const requestBody = {
+      tracking,
+      assetsStorage: params.assetsStorage,
+      params: {
+        input: {
+          type: "url",
+          url: params.url,
+        },
+        conventions: {
+          framework: params.settings.framework,
+          language: params.settings.language,
+          styling: params.settings.styling,
+        },
+        assetsStorage: {
+          type: "bundled",
+        }
+      },
+    };
+
+    return this.#processGenerationRequest<SSEGetCodeFromWebsiteMessage>(
+      "/v1/l2c",
+      requestBody,
+      handler,
+      "l2c",
+      signal
     );
   }
 
   /**
-   * @experimental
-   * This API is experimental and may change or be removed in future releases.
-   * Link2Code (l2c) flow.
+   * @deprecated This method will be removed soon, please use `generateCodeFromWebsite` instead.
    */
   async generateLink2Code(
     params: GetLink2CodeParams,
     handler: GetLink2CodeHandler = {},
-    signal?: AbortSignal,
+    signal?: AbortSignal
   ) {
     let tracking = params.tracking;
     if (this.#auth && "userId" in this.#auth && this.#auth.userId) {
@@ -409,7 +450,7 @@ export class Anima {
       requestBody,
       handler,
       "l2c",
-      signal,
+      signal
     );
   }
 }
