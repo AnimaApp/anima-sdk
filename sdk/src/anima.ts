@@ -370,6 +370,7 @@ export class Anima {
       enableDisplayScreenModelId: settings.enableDisplayScreenModelId,
       enableGeneratePackageLock: settings.enableGeneratePackageLock,
       codegenSettings: settings.codegenSettings,
+      webhookUrl: params.webhookUrl,
     };
 
     return this.#processGenerationRequest<SSECodgenMessage>(
@@ -402,6 +403,7 @@ export class Anima {
       tracking,
       assetsStorage: params.assetsStorage,
       params: params.params,
+      webhookUrl: params.webhookUrl,
     };
 
     return this.#processGenerationRequest<SSEL2CMessage>(

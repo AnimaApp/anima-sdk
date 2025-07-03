@@ -40,6 +40,7 @@ export type GetCodeParams = {
   assetsStorage?: AssetsStorage;
   settings: CodegenSettings;
   tracking?: TrackingInfos;
+  webhookUrl?: string;
 };
 
 export type GetCodeHandler =
@@ -162,6 +163,7 @@ export type GetLink2CodeParams = {
   params: L2CParams;
   assetsStorage?: AssetsStorage;
   tracking?: TrackingInfos;
+  webhookUrl?: string;
 };
 
 export type GetLink2CodeHandler =
