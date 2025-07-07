@@ -147,7 +147,7 @@ export class Anima {
       let errorObj = undefined;
       try {
         errorObj = JSON.parse(errorText);
-      } catch {}
+      } catch { }
 
       if (errorObj?.error?.name === "ZodError") {
         throw new CodegenError({
@@ -231,8 +231,8 @@ export class Anima {
                   typeof handler === "function"
                     ? handler(data)
                     : handler.onPreCodegen?.({
-                        message: (data as any).message,
-                      });
+                      message: (data as any).message,
+                    });
                 }
                 break;
               }
@@ -263,10 +263,10 @@ export class Anima {
                   typeof handler === "function"
                     ? handler(data)
                     : handler.onFigmaMetadata?.({
-                        figmaFileName: (data as any).figmaFileName,
-                        figmaSelectedFrameName: (data as any)
-                          .figmaSelectedFrameName,
-                      });
+                      figmaFileName: (data as any).figmaFileName,
+                      figmaSelectedFrameName: (data as any)
+                        .figmaSelectedFrameName,
+                    });
                 }
                 break;
               }
@@ -279,10 +279,10 @@ export class Anima {
                 typeof handler === "function"
                   ? handler(data)
                   : handler.onGeneratingCode?.({
-                      status: (data as any).payload.status,
-                      progress: (data as any).payload.progress,
-                      files: (data as any).payload.files,
-                    });
+                    status: (data as any).payload.status,
+                    progress: (data as any).payload.progress,
+                    files: (data as any).payload.files,
+                  });
                 break;
               }
 
@@ -407,7 +407,7 @@ export class Anima {
         conventions: {
           framework: params.settings.framework,
           language: params.settings.language,
-          styling: params.settings.styling,
+          styling: params.settings.styling === "inline_styles" ? "inline-styles" : params.settings.styling,
         },
         assetsStorage: {
           type: "bundled",
