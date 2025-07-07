@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Anima } from "./anima";
 import type { CodegenErrorReason } from "./errors";
-import type { GetCodeParams, GetLink2CodeParams, SSECodgenMessage, SSEL2CMessage, SSECodegenMessageErrorPayload } from "./types";
+import type { GetCodeParams, GetCodeFromWebsiteParams, GetLink2CodeParams, SSECodgenMessage, SSEGetCodeFromWebsiteMessage, SSEL2CMessage, SSECodegenMessageErrorPayload } from "./types";
 
 type StreamErrorPayload = {
   name: string;
@@ -19,6 +19,7 @@ export type StreamMessage<T> =
   };
 
 export type StreamCodgenMessage = StreamMessage<SSECodgenMessage>;
+export type StreamCodeFromWebsiteMessage = StreamMessage<SSEGetCodeFromWebsiteMessage>;
 export type StreamL2CMessage = StreamMessage<SSEL2CMessage>;
 
 /**
@@ -175,6 +176,44 @@ export const createCodegenResponseEventStream = async (
 };
 
 /**
+ * Start the code generation from website and creates a ReadableStream to output its result.
+ *
+ * The stream is closed when the code generation ends.
+ *
+ * @param {Anima} anima - An Anima service instance to generate the code from.
+ * @param {GetCodeFromWebsiteParams} params - Parameters required for the code generation process.
+ * @returns {ReadableStream<StreamCodeFromWebsiteMessage>} - A ReadableStream that emits messages related to the code generation process.
+ */
+export const createCodeFromWebsiteStream = (
+  anima: Anima,
+  params: GetCodeFromWebsiteParams
+): ReadableStream<StreamCodeFromWebsiteMessage> => {
+  return createGenerationStream<GetCodeFromWebsiteParams, SSEGetCodeFromWebsiteMessage, StreamCodeFromWebsiteMessage>(
+    anima,
+    params,
+    anima.generateCodeFromWebsite
+  );
+};
+
+/**
+ * Creates a Server-Sent Events (SSE) `Response` that forwards all messages from the code generation from website stream.
+ *
+ * But, if the first message indicates an error (e.g., connection failed), the function returns a 500 response with the error message.
+ *
+ * @param {Anima} anima - The Anima instance to use for creating the data stream.
+ * @param {GetCodeFromWebsiteParams} params - The parameters for the code generation request.
+ * @returns {Promise<Response>} - A promise that resolves to an HTTP response.
+ */
+export const createCodeFromWebsiteResponseEventStream = async (
+  anima: Anima,
+  params: GetCodeFromWebsiteParams
+): Promise<Response> => {
+  const stream = createCodeFromWebsiteStream(anima, params);
+  return createResponseEventStream(stream);
+};
+
+/**
+ * @deprecated This function will be removed soon, please use `createCodeFromWebsiteStream` instead.
  * @experimental
  * This API is experimental and may change or be removed in future releases.
  * Link2Code (l2c) stream flow.
@@ -199,6 +238,7 @@ export const createLink2CodeStream = (
 };
 
 /**
+ * @deprecated This function will be removed soon, please use `createCodeFromWebsiteResponseEventStream` instead.
  * Creates a Server-Sent Events (SSE) `Response` that forwards all messages from the URL to code generation stream.
  *
  * But, if the first message indicates an error (e.g., connection failed), the function returns a 500 response with the error message.

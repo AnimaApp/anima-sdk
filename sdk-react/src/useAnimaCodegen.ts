@@ -2,6 +2,7 @@ import { arrayBufferToBase64 } from "./utils";
 import type {
   AnimaSDKResult,
   GetCodeParams,
+  GetCodeFromWebsiteParams,
   GetLink2CodeParams,
   StreamCodgenMessage,
 } from "@animaapp/anima-sdk";
@@ -17,8 +18,12 @@ export type UseAnimaParams =
   | (Omit<GetCodeParams, "assetsStorage"> & {
       assetsStorage?: GetCodeParams["assetsStorage"] | LocalAssetsStorage;
     })
+  | (Omit<GetCodeFromWebsiteParams, "assetsStorage"> & {
+      assetsStorage?: GetCodeFromWebsiteParams["assetsStorage"] | LocalAssetsStorage;
+    })
   | (Omit<GetLink2CodeParams, "assetsStorage"> & {
       assetsStorage?: GetLink2CodeParams["assetsStorage"] | LocalAssetsStorage;
+      /** @deprecated Use GetCodeFromWebsiteParams instead. This will be removed in a future version. */
     });
 
 type Status = "idle" | "pending" | "success" | "aborted" | "error";
