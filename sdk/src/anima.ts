@@ -407,7 +407,7 @@ export class Anima {
         conventions: {
           framework: params.settings.framework,
           language: params.settings.language,
-          styling: params.settings.styling === "inline_styles" ? "inline-styles" : params.settings.styling,
+          styling: params.settings.styling,
         },
         assetsStorage: {
           type: "bundled",
