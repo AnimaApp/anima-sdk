@@ -10,6 +10,9 @@ import { CodegenError } from "@animaapp/anima-sdk";
 import { EventSource } from "eventsource";
 import { useImmer } from "use-immer";
 
+// How many times can we tolerate transient errors before terminating the request
+const MAX_RETRIES_AFTER_ERROR = 10;
+
 type LocalAssetsStorage =
   | { strategy: "local"; path: string }
   | { strategy: "local"; filePath: string; referencePath: string };
@@ -19,7 +22,9 @@ export type UseAnimaParams =
       assetsStorage?: GetCodeParams["assetsStorage"] | LocalAssetsStorage;
     })
   | (Omit<GetCodeFromWebsiteParams, "assetsStorage"> & {
-      assetsStorage?: GetCodeFromWebsiteParams["assetsStorage"] | LocalAssetsStorage;
+      assetsStorage?:
+        | GetCodeFromWebsiteParams["assetsStorage"]
+        | LocalAssetsStorage;
     })
   | (Omit<GetLink2CodeParams, "assetsStorage"> & {
       assetsStorage?: GetLink2CodeParams["assetsStorage"] | LocalAssetsStorage;
@@ -217,9 +222,19 @@ export const useAnimaCodegen = ({
         result.assets = message.payload.assets;
       });
 
+      let errorCount = 0;
+
       // TODO: For some reason, we receive errors even after the `done` event is triggered.
       es.addEventListener("error", async (error: ErrorEvent | MessageEvent) => {
+        console.log(
+          `Experienced error during code generation (attempt ${errorCount + 1} / ${MAX_RETRIES_AFTER_ERROR})`,
+          error,
+        );
+
         let errorPayload: StreamMessageByType<"error"> | undefined;
+
+        // If true, then there's no point into keeping the event handler alive for retries.
+        let isUnrecoverableError = false;
 
         try {
           if (error instanceof MessageEvent) {
@@ -228,7 +243,11 @@ export const useAnimaCodegen = ({
             const response = await lastFetchResponse;
             errorPayload = await response.json();
           }
-        } catch { }
+
+          if (errorPayload?.payload?.name === "Task Crashed") {
+            isUnrecoverableError = true;
+          }
+        } catch {}
 
         const codegenError = new CodegenError({
           name: errorPayload?.payload.name ?? "Unknown error",
@@ -237,15 +256,30 @@ export const useAnimaCodegen = ({
           detail: errorPayload?.payload.detail,
         });
 
-        updateStatus((draft) => {
-          draft.status = "error";
-          draft.error = codegenError;
-        });
+        errorCount++;
 
-        resolve({
-          result: null,
-          error: codegenError,
-        });
+        // It could happen that transient network errors cause the "error" event to be triggered temporarily.
+        // In these cases, we ignore the error and retry the request, unless it's an unrecoverable error.
+        let shouldTerminateRequest = false;
+        if (errorCount > MAX_RETRIES_AFTER_ERROR) {
+          console.log("Experienced too many errors, terminating request");
+          shouldTerminateRequest = true;
+        } else if (isUnrecoverableError) {
+          console.log("Experienced unrecoverable error, terminating request");
+          shouldTerminateRequest = true;
+        }
+
+        if (shouldTerminateRequest) {
+          updateStatus((draft) => {
+            draft.status = "error";
+            draft.error = codegenError;
+          });
+
+          resolve({
+            result: null,
+            error: codegenError,
+          });
+        }
       });
 
       es.addEventListener("done", (event) => {
