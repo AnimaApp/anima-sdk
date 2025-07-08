@@ -44,7 +44,9 @@ export const formatToFigmaLink = ({
   url.pathname = `design/${fileKey}`;
 
   if (duplicate) {
-    url.pathname = `${url.pathname}/duplicate`;
+    // The path to duplicate a file is `/design/{fileKey}/{fileName}/duplicate`.
+    // The `fileName` is not used, so we can use a dummy value.
+    url.pathname = `${url.pathname}/dummy/duplicate`;
   }
 
   if (nodeId) {

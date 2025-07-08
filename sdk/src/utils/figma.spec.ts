@@ -87,7 +87,7 @@ describe("# figma", () => {
     });
 
     describe('when the "duplicate" flag is enabled', () => {
-      it("generates a link including the '/duplicated' path", () => {
+      it("generates a link including the '/dummy/duplicated' path", () => {
         const url = formatToFigmaLink({
           fileKey: "file-key",
           nodeId: "1:2",
@@ -95,7 +95,7 @@ describe("# figma", () => {
         });
 
         expect(url.href).toBe(
-          "https://www.figma.com/design/file-key/duplicate?node-id=1-2"
+          "https://www.figma.com/design/file-key/dummy/duplicate?node-id=1-2"
         );
       });
     });
