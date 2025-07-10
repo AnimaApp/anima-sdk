@@ -226,7 +226,7 @@ export const useAnimaCodegen = ({
 
       // TODO: For some reason, we receive errors even after the `done` event is triggered.
       es.addEventListener("error", async (error: ErrorEvent | MessageEvent) => {
-        console.log(
+        console.warn(
           `Experienced error during code generation (attempt ${errorCount + 1} / ${MAX_RETRIES_AFTER_ERROR})`,
           error,
         );
@@ -262,10 +262,10 @@ export const useAnimaCodegen = ({
         // In these cases, we ignore the error and retry the request, unless it's an unrecoverable error.
         let shouldTerminateRequest = false;
         if (errorCount > MAX_RETRIES_AFTER_ERROR) {
-          console.log("Experienced too many errors, terminating request");
+          console.error("Experienced too many errors, terminating request");
           shouldTerminateRequest = true;
         } else if (isUnrecoverableError) {
-          console.log("Experienced unrecoverable error, terminating request");
+          console.error("Experienced unrecoverable error, terminating request");
           shouldTerminateRequest = true;
         }
 
