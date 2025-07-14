@@ -1,4 +1,4 @@
-import type { CodegenErrorReason } from "./errors";
+import type { CodegenErrorReason, GetCodeFromWebsiteErrorReason } from "./errors";
 import type { CodegenSettings } from "./settings";
 
 export type AnimaFiles = Record<
@@ -161,9 +161,15 @@ export type SSEGetCodeFromWebsiteMessage =
   | { type: 'assets_uploaded' }
   | { type: 'assets_list'; payload: { assets: Array<{ name: string; url: string }> } }
   | { type: 'aborted' }
-  | { type: 'error'; payload: SSECodegenMessageErrorPayload }
+  | { type: 'error'; payload: SSEGetCodeFromWebsiteMessageErrorPayload }
   | { type: 'done'; payload: { sessionId: string; tokenUsage: number } };
 
+export type SSEGetCodeFromWebsiteMessageErrorPayload = {
+  errorName: string;
+  task?: string;
+  reason: GetCodeFromWebsiteErrorReason;
+  sentryTraceId?: string;
+};
 
 /**
  * @deprecated This type is deprecated and will be removed soon.

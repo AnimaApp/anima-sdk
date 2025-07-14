@@ -40,6 +40,11 @@ export type SDKErrorReason =
   | "Connection closed before the 'done' message"
   | "Response body is null";
 
+/**
+ * Errors from the Website To Code Flow
+ */
+export type GetCodeFromWebsiteErrorReason = "Scraping is blocked" | "Unknown";
+
 export class CodegenError extends Error {
   status?: number;
   detail?: unknown;
@@ -51,7 +56,7 @@ export class CodegenError extends Error {
     detail,
   }: {
     name: string;
-    reason: CodegenErrorReason | CodegenRouteErrorReason | SDKErrorReason;
+    reason: CodegenErrorReason | CodegenRouteErrorReason | SDKErrorReason | GetCodeFromWebsiteErrorReason;
     status?: number;
     detail?: unknown;
   }) {
