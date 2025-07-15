@@ -444,7 +444,6 @@ export class Anima {
       tracking,
       assetsStorage: params.assetsStorage,
       params: params.params,
-      webhookUrl: params.webhookUrl,
     };
 
     return this.#processGenerationRequest<SSEL2CMessage>(
