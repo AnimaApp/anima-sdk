@@ -23,7 +23,8 @@ export const isValidFigmaUrl = (
     const hasCorrectPrefix =
       (path.startsWith("/file/") &&
         url.searchParams.get("type") !== "whiteboard") ||
-      path.startsWith("/design/");
+      path.startsWith("/design/") ||
+      path.startsWith("/proto/");
 
     return [hasCorrectPrefix && fileKey.length === 22, fileKey, nodeId];
   } catch {

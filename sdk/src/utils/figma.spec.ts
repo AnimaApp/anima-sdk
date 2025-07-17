@@ -71,6 +71,24 @@ describe("# figma", () => {
 
         expect(result).toStrictEqual([true, validFileKey, "1:2"]);
       });
+
+      it("returns [true, fileKey, nodeId] for Figma proto URLs", () => {
+        const validFileKey = "0fRU16KZHqbKtLWtvPM1qA";
+        const result = isValidFigmaUrl(
+          `https://www.figma.com/proto/${validFileKey}/Feedback-report-AI-test?node-id=1-2&t=zmT2FSe5Zv1Jix6a-1`
+        );
+
+        expect(result).toStrictEqual([true, validFileKey, "1:2"]);
+      });
+
+      it("returns [true, fileKey, ''] for Figma proto URLs with no node id", () => {
+        const validFileKey = "0fRU16KZHqbKtLWtvPM1qA";
+        const result = isValidFigmaUrl(
+          `https://www.figma.com/proto/${validFileKey}/Feedback-report-AI-test`
+        );
+
+        expect(result).toStrictEqual([true, validFileKey, ""]);
+      });
     });
   });
 
