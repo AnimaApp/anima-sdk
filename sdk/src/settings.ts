@@ -20,7 +20,9 @@ const CodegenSettingsSchema = z
           "scss",
           "inline_styles",
         ]),
-        uiLibrary: z.enum(["mui", "antd", "radix", "shadcn", "clean_react"]).optional(),
+        uiLibrary: z
+          .enum(["mui", "antd", "radix", "shadcn", "clean_react"])
+          .optional(),
         responsivePages: z
           .array(
             z.object({
@@ -33,6 +35,7 @@ const CodegenSettingsSchema = z
         enableCompactStructure: z.boolean().optional(),
         enableDisplayScreenModelId: z.boolean().optional(),
         enableGeneratePackageLock: z.boolean().optional(),
+        enableAnimationsPreset: z.boolean().optional(),
         enableAutoSplit: z.boolean().optional(),
         autoSplitThreshold: z.number().optional(),
         url: z.string().url().optional(),
@@ -52,13 +55,13 @@ export type CodegenSettings = {
   model?: string;
   framework: "react" | "html";
   styling:
-  | "plain_css"
-  | "css_modules"
-  | "styled_components"
-  | "tailwind"
-  | "sass"
-  | "scss"
-  | "inline_styles";
+    | "plain_css"
+    | "css_modules"
+    | "styled_components"
+    | "tailwind"
+    | "sass"
+    | "scss"
+    | "inline_styles";
   uiLibrary?: "mui" | "antd" | "radix" | "shadcn" | "clean_react";
   responsivePages?: Array<{
     name: string;
@@ -73,6 +76,7 @@ export type CodegenSettings = {
   allowAutoSelectFirstNode?: boolean;
   enableDisplayScreenModelId?: boolean;
   enableGeneratePackageLock?: boolean;
+  enableAnimationsPreset?: boolean;
   url?: string;
   codegenSettings?: Record<string, unknown>;
 };
