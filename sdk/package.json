@@ -1,6 +1,6 @@
 {
   "name": "@animaapp/anima-sdk",
-  "version": "0.6.11",
+  "version": "0.6.15",
   "type": "module",
   "description": "Anima's JavaScript utilities library",
   "author": "Anima App, Inc.",
@@ -25,6 +25,9 @@
     "prepack": "yarn build",
     "update-design-test-snapshot": "tsx tests/design/update.ts"
   },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@animaapp/http-client-figma": "^1.0.3",
     "@figma/rest-api-spec": "^0.27.0",

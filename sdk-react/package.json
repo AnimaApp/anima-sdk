@@ -1,6 +1,6 @@
 {
   "name": "@animaapp/anima-sdk-react",
-  "version": "0.6.11",
+  "version": "0.6.15",
   "type": "module",
   "description": "Anima's JavaScript utilities library",
   "author": "Anima App, Inc.",
@@ -24,6 +24,9 @@
     "prepack": "yarn build",
     "dev": "storybook dev -p 6006"
   },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "eventsource": "^3.0.6",
     "immer": "^10.1.1",
