@@ -45,6 +45,11 @@ export type SDKErrorReason =
  */
 export type GetCodeFromWebsiteErrorReason = "Scraping is blocked" | "Unknown";
 
+/**
+ * Errors from the Prompt To Code Flow
+ */
+export type GetCodeFromPromptErrorReason = "Invalid prompt" | "Generation failed" | "Unknown";
+
 export class CodegenError extends Error {
   status?: number;
   detail?: unknown;
@@ -56,7 +61,7 @@ export class CodegenError extends Error {
     detail,
   }: {
     name: string;
-    reason: CodegenErrorReason | CodegenRouteErrorReason | SDKErrorReason | GetCodeFromWebsiteErrorReason;
+    reason: CodegenErrorReason | CodegenRouteErrorReason | SDKErrorReason | GetCodeFromWebsiteErrorReason | GetCodeFromPromptErrorReason;
     status?: number;
     detail?: unknown;
   }) {
