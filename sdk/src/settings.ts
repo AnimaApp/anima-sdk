@@ -5,6 +5,8 @@ const CodegenSettingsSchema = z
     language: z.enum(["typescript", "javascript"]).optional(),
     disableMarkedForExport: z.boolean().optional(),
     allowAutoSelectFirstNode: z.boolean().optional().default(true),
+    enableDisplayDataId: z.boolean().optional(),
+    enableDisplayDataName: z.boolean().optional(),
   })
   .and(
     z.union([
@@ -36,8 +38,7 @@ const CodegenSettingsSchema = z
         enableDisplayScreenModelId: z.boolean().optional(),
         enableGeneratePackageLock: z.boolean().optional(),
         enableAnimationsPreset: z.boolean().optional(),
-        enableDisplayDataId: z.boolean().optional(),
-        enableDisplayDataName: z.boolean().optional(),
+
         enableAutoSplit: z.boolean().optional(),
         autoSplitThreshold: z.number().optional(),
         url: z.string().url().optional(),
