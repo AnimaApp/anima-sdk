@@ -400,14 +400,26 @@ export class Anima {
       }
     }
 
+    let input;
+    if (params.mhtml) {
+      input = {
+        type: "mhtml",
+        mhtml: params.mhtml,
+      };
+    } else if (params.url) {
+      input = {
+        type: "url",
+        url: params.url,
+      };
+    } else {
+      throw new Error("Either 'url' or 'mhtml' must be provided");
+    }
+
     const requestBody = {
       tracking,
       assetsStorage: params.assetsStorage,
       params: {
-        input: {
-          type: "url",
-          url: params.url,
-        },
+        input,
         conventions: {
           framework: params.settings.framework,
           language: params.settings.language,
