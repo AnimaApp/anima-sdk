@@ -405,6 +405,7 @@ export class Anima {
       input = {
         type: "mhtml",
         mhtml: params.mhtml,
+        url: params.url,
       };
     } else if (params.url) {
       input = {
