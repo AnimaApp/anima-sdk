@@ -1,4 +1,17 @@
 /**
+ * Errors from Anima API, common across multiple routes.
+ */
+export type CommonApiError =
+  | "Missing Authorization header"
+  | "Invalid Authorization header"
+  | "Missing teamId"
+  | "Internal server error"
+  | "Forbidden, no team access"
+  | "Requested Usage Exceeds Limit"
+  | "Too many concurrent jobs. Please wait for one to finish."
+  | "Invalid Anima token";
+
+/**
  * Codegen errors from the worker
  */
 export type CodegenErrorReason =
@@ -21,15 +34,8 @@ export type CodegenErrorReason =
  * Codegen errors from the "/codegen" route
  */
 export type CodegenRouteErrorReason =
-  | "Missing Authorization header"
-  | "Invalid Authorization header"
-  | "Missing teamId"
-  | "Internal server error"
-  | "Forbidden, no team access"
-  | "Requested Usage Exceeds Limit"
   | "Not all frames id from responsive pages are mentioned on the nodes id list"
-  | "Too many screens to import"
-  | "Invalid Anima token";
+  | "Too many screens to import";
 
 /**
  * Errors from the SDK
@@ -56,7 +62,12 @@ export class CodegenError extends Error {
     detail,
   }: {
     name: string;
-    reason: CodegenErrorReason | CodegenRouteErrorReason | SDKErrorReason | GetCodeFromWebsiteErrorReason;
+    reason:
+      | CommonApiError
+      | CodegenErrorReason
+      | CodegenRouteErrorReason
+      | SDKErrorReason
+      | GetCodeFromWebsiteErrorReason;
     status?: number;
     detail?: unknown;
   }) {
