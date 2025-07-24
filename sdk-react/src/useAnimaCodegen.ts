@@ -232,6 +232,7 @@ export const useAnimaCodegen = ({
         );
 
         let errorPayload: StreamMessageByType<"error"> | undefined;
+        let errorStatusCode: number | undefined;
 
         // If true, then there's no point into keeping the event handler alive for retries.
         let isUnrecoverableError = false;
@@ -241,10 +242,16 @@ export const useAnimaCodegen = ({
             errorPayload = JSON.parse(error.data);
           } else {
             const response = await lastFetchResponse;
-            errorPayload = await response.json();
+            errorStatusCode = response.status;
+            try {
+              errorPayload = await response.json();
+            } catch {}
           }
 
-          if (errorPayload?.payload?.name === "Task Crashed") {
+          if (
+            errorPayload?.payload?.name === "Task Crashed" ||
+            errorStatusCode === 429
+          ) {
             isUnrecoverableError = true;
           }
         } catch {}

@@ -8,7 +8,7 @@ export type CommonApiError =
   | "Internal server error"
   | "Forbidden, no team access"
   | "Requested Usage Exceeds Limit"
-  | "Too many concurrent jobs. Please wait for one to finish."
+  | "Too many concurrent jobs"
   | "Invalid Anima token";
 
 /**
