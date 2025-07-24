@@ -373,6 +373,8 @@ export class Anima {
       enableDisplayScreenModelId: settings.enableDisplayScreenModelId,
       enableGeneratePackageLock: settings.enableGeneratePackageLock,
       enableAnimationsPreset: settings.enableAnimationsPreset,
+      enableDisplayDataId: settings.enableDisplayDataId,
+      enableDisplayDataName: settings.enableDisplayDataName,
       codegenSettings: settings.codegenSettings,
       webhookUrl: params.webhookUrl,
     };

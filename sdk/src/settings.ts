@@ -36,6 +36,8 @@ const CodegenSettingsSchema = z
         enableDisplayScreenModelId: z.boolean().optional(),
         enableGeneratePackageLock: z.boolean().optional(),
         enableAnimationsPreset: z.boolean().optional(),
+        enableDisplayDataId: z.boolean().optional(),
+        enableDisplayDataName: z.boolean().optional(),
         enableAutoSplit: z.boolean().optional(),
         autoSplitThreshold: z.number().optional(),
         url: z.string().url().optional(),
@@ -77,6 +79,8 @@ export type CodegenSettings = {
   enableDisplayScreenModelId?: boolean;
   enableGeneratePackageLock?: boolean;
   enableAnimationsPreset?: boolean;
+  enableDisplayDataId?: boolean;
+  enableDisplayDataName?: boolean;
   url?: string;
   codegenSettings?: Record<string, unknown>;
 };
