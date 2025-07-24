@@ -5,6 +5,7 @@
 > Design to code, automated
 
 The Anima SDK allows you to generate code from:
+
 * **Figma** -> Converts Figma designs into high-quality code.
 * **Websites** (Early Preview) -> Converts website URLs into high-quality code.
 
@@ -77,7 +78,7 @@ Check [`example-server`](/example-server) to see a thin example on how to expose
 
 ### Settings Options
 
-The following options can be passed to the `settings` parameter when calling `generateCode` or `generateCodeFromWebsite`. 
+The following options can be passed to the `settings` parameter when calling `generateCode` or `generateCodeFromWebsite`.
 
 > Note: Not all options are available for both Figma designs and websites. We will mark the options that are available for each source.
 
@@ -95,6 +96,9 @@ The following options can be passed to the `settings` parameter when calling `ge
 | `disableMarkedForExport`    | `boolean` <br><br> Note: only available for Figma designs.                                                                                                  | Disable the "marked for export" feature.                                                 |
 | `allowAutoSelectFirstNode`  | `boolean` <br><br> Note: only available for Figma designs.                                                                                                  | Auto-select first valid node when passed a page with multiple children (default: `true`) |
 | `enableGeneratePackageLock` | `boolean`                                                                                                  | Generate package-lock.json file.                                                         |
+| `enableDisplayDataId`       | `boolean` <br><br> Note: only available for Figma designs.                                                                                                  | Add data-id attributes to elements for easier testing and selection.                     |
+| `enableDisplayDataName`     | `boolean` <br><br> Note: only available for Figma designs.                                                                                                  | Add data-name attributes to elements for easier identification.                          |
+| `enableAnimationsPreset`    | `boolean` <br><br> Note: only available for React with Shadcn UI library.                                                                                   | Enable basic animations for elements.                                                    |
 
 ### Utils
 
