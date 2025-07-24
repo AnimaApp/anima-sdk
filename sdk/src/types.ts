@@ -116,7 +116,9 @@ export type SSECodegenMessageErrorPayload = {
 };
 
 export type GetCodeFromWebsiteParams = {
-  url: string;
+  url?: string;
+  mhtml?: string;
+
   assetsStorage?: AssetsStorage;
   settings: GetCodeFromWebsiteSettings;
   tracking?: TrackingInfos;
