@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Anima } from "./anima";
 import type { CodegenErrorReason } from "./errors";
-import type { GetCodeParams, GetCodeFromWebsiteParams, GetLink2CodeParams, SSECodgenMessage, SSEGetCodeFromWebsiteMessage, SSEL2CMessage, SSECodegenMessageErrorPayload } from "./types";
+import type { GetCodeParams, GetCodeFromWebsiteParams, GetCodeFromPromptParams, GetLink2CodeParams, SSECodgenMessage, SSEGetCodeFromWebsiteMessage, SSEGetCodeFromPromptMessage, SSEL2CMessage, SSECodegenMessageErrorPayload } from "./types";
 
 type StreamErrorPayload = {
   name: string;
@@ -20,6 +20,7 @@ export type StreamMessage<T> =
 
 export type StreamCodgenMessage = StreamMessage<SSECodgenMessage>;
 export type StreamCodeFromWebsiteMessage = StreamMessage<SSEGetCodeFromWebsiteMessage>;
+export type StreamCodeFromPromptMessage = StreamMessage<SSEGetCodeFromPromptMessage>;
 export type StreamL2CMessage = StreamMessage<SSEL2CMessage>;
 
 /**
@@ -209,6 +210,45 @@ export const createCodeFromWebsiteResponseEventStream = async (
   params: GetCodeFromWebsiteParams
 ): Promise<Response> => {
   const stream = createCodeFromWebsiteStream(anima, params);
+  return createResponseEventStream(stream);
+};
+
+/**
+ * Prompt to Code (p2c) stream flow.
+ *
+ * Start the prompt to code generation and creates a ReadableStream to output its result.
+ *
+ * The stream is closed when the code generation ends.
+ *
+ * @param {Anima} anima - An Anima service instance to generate the code from.
+ * @param {GetCodeFromPromptParams} params - Parameters required for the code generation process.
+ * @returns {ReadableStream<StreamCodeFromPromptMessage>} - A ReadableStream that emits messages related to the code generation process.
+ */
+export const createCodeFromPromptStream = (
+  anima: Anima,
+  params: GetCodeFromPromptParams
+): ReadableStream<StreamCodeFromPromptMessage> => {
+  return createGenerationStream<GetCodeFromPromptParams, SSEGetCodeFromPromptMessage, StreamCodeFromPromptMessage>(
+    anima,
+    params,
+    anima.generateCodeFromPrompt
+  );
+};
+
+/**
+ * Creates a Server-Sent Events (SSE) `Response` that forwards all messages from the code generation from prompt stream.
+ *
+ * But, if the first message indicates an error (e.g., connection failed), the function returns a 500 response with the error message.
+ *
+ * @param {Anima} anima - The Anima instance to use for creating the data stream.
+ * @param {GetCodeFromPromptParams} params - The parameters for the code generation request.
+ * @returns {Promise<Response>} - A promise that resolves to an HTTP response.
+ */
+export const createCodeFromPromptResponseEventStream = async (
+  anima: Anima,
+  params: GetCodeFromPromptParams
+): Promise<Response> => {
+  const stream = createCodeFromPromptStream(anima, params);
   return createResponseEventStream(stream);
 };
 

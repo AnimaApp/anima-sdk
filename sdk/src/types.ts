@@ -1,4 +1,4 @@
-import type { CodegenErrorReason, GetCodeFromWebsiteErrorReason } from "./errors";
+import type { CodegenErrorReason, GetCodeFromWebsiteErrorReason, GetCodeFromPromptErrorReason } from "./errors";
 import type { CodegenSettings } from "./settings";
 
 export type AnimaFiles = Record<
@@ -11,8 +11,8 @@ export type AnimaFiles = Record<
 
 export type BaseResult = {
   sessionId: string;
-  figmaFileName: string;
-  figmaSelectedFrameName: string;
+  figmaFileName?: string;
+  figmaSelectedFrameName?: string;
   tokenUsage: number;
 };
 
@@ -172,6 +172,64 @@ export type SSEGetCodeFromWebsiteMessageErrorPayload = {
   errorName: string;
   task?: string;
   reason: GetCodeFromWebsiteErrorReason;
+  sentryTraceId?: string;
+};
+
+export type GetCodeFromPromptParams = {
+  prompt: string;
+  assetsStorage?: AssetsStorage;
+  settings: GetCodeFromPromptSettings;
+  tracking?: TrackingInfos;
+  webhookUrl?: string;
+};
+
+export type GetCodeFromPromptHandler =
+  | ((message: SSEGetCodeFromPromptMessage) => void)
+  | {
+    onQueueing?: () => void;
+    onStart?: ({ sessionId }: { sessionId: string }) => void;
+    onAssetsUploaded?: () => void;
+    onAssetsList?: ({
+      assets,
+    }: {
+      assets: Array<{ name: string; url: string }>;
+    }) => void;
+    onGeneratingCode?: ({
+      status,
+      progress,
+      files,
+    }: {
+      status: "success" | "running" | "failure";
+      progress: number;
+      files: AnimaFiles;
+    }) => void;
+    onCodegenCompleted?: () => void;
+  };
+
+export type GetCodeFromPromptSettings = {
+  language?: "typescript";
+  framework: "react" | "html";
+  styling:
+  | "tailwind"
+  | "inline_styles";
+  uiLibrary?: "shadcn";
+};
+
+export type SSEGetCodeFromPromptMessage =
+  | { type: 'queueing' }
+  | { type: 'start'; sessionId: string }
+  | { type: 'generating_code'; payload: GeneratingCodePayload }
+  | { type: 'generation_completed' }
+  | { type: 'assets_uploaded' }
+  | { type: 'assets_list'; payload: { assets: Array<{ name: string; url: string }> } }
+  | { type: 'aborted' }
+  | { type: 'error'; payload: SSEGetCodeFromPromptMessageErrorPayload }
+  | { type: 'done'; payload: { sessionId: string; tokenUsage: number } };
+
+export type SSEGetCodeFromPromptMessageErrorPayload = {
+  errorName: string;
+  task?: string;
+  reason: GetCodeFromPromptErrorReason;
   sentryTraceId?: string;
 };
 
