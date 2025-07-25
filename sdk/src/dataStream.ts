@@ -1,14 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Anima } from "./anima";
-import type { CodegenErrorReason } from "./errors";
-import type { GetCodeParams, GetCodeFromWebsiteParams, GetLink2CodeParams, SSECodgenMessage, SSEGetCodeFromWebsiteMessage, SSEL2CMessage, SSECodegenMessageErrorPayload } from "./types";
+import type { GetCodeFromFigmaErrorReason } from "./errors";
+import type {
+  GetCodeParams,
+  GetCodeFromWebsiteParams,
+  GetCodeFromPromptParams,
+  GetLink2CodeParams,
+  SSEGetCodeFromWebsiteMessage,
+  SSEGetCodeFromPromptMessage,
+  SSEGetCodeFromFigmaMessageErrorPayload,
+  SSEGetCodeFromFigmaMessage,
+} from "./types";
 
 type StreamErrorPayload = {
   name: string;
-  message: CodegenErrorReason;
+  message: GetCodeFromFigmaErrorReason;
   status?: number;
   detail?: unknown;
-  errorPayload?: SSECodegenMessageErrorPayload;
+  errorPayload?: SSEGetCodeFromFigmaMessageErrorPayload;
 };
 
 export type StreamMessage<T> =
@@ -18,9 +27,12 @@ export type StreamMessage<T> =
     payload: StreamErrorPayload;
   };
 
-export type StreamCodgenMessage = StreamMessage<SSECodgenMessage>;
-export type StreamCodeFromWebsiteMessage = StreamMessage<SSEGetCodeFromWebsiteMessage>;
-export type StreamL2CMessage = StreamMessage<SSEL2CMessage>;
+export type StreamCodgenMessage = StreamMessage<SSEGetCodeFromFigmaMessage>;
+export type StreamCodeFromWebsiteMessage =
+  StreamMessage<SSEGetCodeFromWebsiteMessage>;
+export type StreamCodeFromPromptMessage =
+  StreamMessage<SSEGetCodeFromPromptMessage>;
+export type StreamL2CMessage = StreamMessage<SSEGetCodeFromWebsiteMessage>;
 
 /**
  * Generic function to create a stream for both codegen and link2code.
@@ -78,7 +90,7 @@ function createGenerationStream<
               message: "message" in error ? error.message : "Unknown",
               status: "status" in error ? error.status : undefined,
               detail: "detail" in error ? error.detail : undefined,
-              errorPayload: "payload" in error ? error.payload as SSECodegenMessageErrorPayload : undefined,
+              errorPayload: "payload" in error ? error.payload : undefined,
             },
           } as any);
           controller.close();
@@ -100,30 +112,29 @@ export const createCodegenStream = (
   anima: Anima,
   params: GetCodeParams
 ): ReadableStream<StreamCodgenMessage> => {
-  return createGenerationStream<GetCodeParams, SSECodgenMessage, StreamCodgenMessage>(
-    anima,
-    params,
-    anima.generateCode
-  );
+  return createGenerationStream<
+    GetCodeParams,
+    SSEGetCodeFromFigmaMessage,
+    StreamCodgenMessage
+  >(anima, params, anima.generateCode);
 };
 
 /**
  * Generic function to create a Server-Sent Events (SSE) Response from a stream.
- * 
+ *
  * @param stream - The stream to convert to an SSE response
  * @returns A promise that resolves to an HTTP response
  */
-async function createResponseEventStream<T extends { type: string; payload?: any }>(
-  stream: ReadableStream<T>
-): Promise<Response> {
+async function createResponseEventStream<
+  T extends { type: string; payload?: any },
+>(stream: ReadableStream<T>): Promise<Response> {
   const [verifyStream, consumerStream] = stream.tee();
   const firstMessage = await verifyStream.getReader().read();
 
   if (
     firstMessage.done ||
     !firstMessage.value ||
-    (firstMessage.value.type === "error" &&
-      firstMessage.value.payload?.status)
+    (firstMessage.value.type === "error" && firstMessage.value.payload?.status)
   ) {
     return new Response(JSON.stringify(firstMessage.value), {
       status:
@@ -188,11 +199,11 @@ export const createCodeFromWebsiteStream = (
   anima: Anima,
   params: GetCodeFromWebsiteParams
 ): ReadableStream<StreamCodeFromWebsiteMessage> => {
-  return createGenerationStream<GetCodeFromWebsiteParams, SSEGetCodeFromWebsiteMessage, StreamCodeFromWebsiteMessage>(
-    anima,
-    params,
-    anima.generateCodeFromWebsite
-  );
+  return createGenerationStream<
+    GetCodeFromWebsiteParams,
+    SSEGetCodeFromWebsiteMessage,
+    StreamCodeFromWebsiteMessage
+  >(anima, params, anima.generateCodeFromWebsite);
 };
 
 /**
@@ -209,6 +220,45 @@ export const createCodeFromWebsiteResponseEventStream = async (
   params: GetCodeFromWebsiteParams
 ): Promise<Response> => {
   const stream = createCodeFromWebsiteStream(anima, params);
+  return createResponseEventStream(stream);
+};
+
+/**
+ * Prompt to Code (p2c) stream flow.
+ *
+ * Start the prompt to code generation and creates a ReadableStream to output its result.
+ *
+ * The stream is closed when the code generation ends.
+ *
+ * @param {Anima} anima - An Anima service instance to generate the code from.
+ * @param {GetCodeFromPromptParams} params - Parameters required for the code generation process.
+ * @returns {ReadableStream<StreamCodeFromPromptMessage>} - A ReadableStream that emits messages related to the code generation process.
+ */
+export const createCodeFromPromptStream = (
+  anima: Anima,
+  params: GetCodeFromPromptParams
+): ReadableStream<StreamCodeFromPromptMessage> => {
+  return createGenerationStream<
+    GetCodeFromPromptParams,
+    SSEGetCodeFromPromptMessage,
+    StreamCodeFromPromptMessage
+  >(anima, params, anima.generateCodeFromPrompt);
+};
+
+/**
+ * Creates a Server-Sent Events (SSE) `Response` that forwards all messages from the code generation from prompt stream.
+ *
+ * But, if the first message indicates an error (e.g., connection failed), the function returns a 500 response with the error message.
+ *
+ * @param {Anima} anima - The Anima instance to use for creating the data stream.
+ * @param {GetCodeFromPromptParams} params - The parameters for the code generation request.
+ * @returns {Promise<Response>} - A promise that resolves to an HTTP response.
+ */
+export const createCodeFromPromptResponseEventStream = async (
+  anima: Anima,
+  params: GetCodeFromPromptParams
+): Promise<Response> => {
+  const stream = createCodeFromPromptStream(anima, params);
   return createResponseEventStream(stream);
 };
 
@@ -230,11 +280,11 @@ export const createLink2CodeStream = (
   anima: Anima,
   params: GetLink2CodeParams
 ): ReadableStream<StreamL2CMessage> => {
-  return createGenerationStream<GetLink2CodeParams, SSEL2CMessage, StreamL2CMessage>(
-    anima,
-    params,
-    anima.generateLink2Code
-  );
+  return createGenerationStream<
+    GetLink2CodeParams,
+    SSEGetCodeFromWebsiteMessage,
+    StreamL2CMessage
+  >(anima, params, anima.generateLink2Code);
 };
 
 /**

@@ -7,12 +7,15 @@ import {
   AnimaSDKResult,
   GetCodeFromWebsiteHandler,
   GetCodeFromWebsiteParams,
+  GetCodeFromPromptHandler,
+  GetCodeFromPromptParams,
   GetCodeHandler,
   GetCodeParams,
   GetLink2CodeHandler,
   GetLink2CodeParams,
-  SSECodgenMessage,
+  SSECodegenMessage,
   SSEGetCodeFromWebsiteMessage,
+  SSEGetCodeFromPromptMessage,
   SSEL2CMessage,
 } from "./types";
 import { isNodeCodegenCompatible } from "./utils/isNodeCodegenCompatible";
@@ -110,7 +113,7 @@ export class Anima {
   }
 
   /**
-   * Generic method to handle API requests and stream processing for both code generation and link2code.
+   * Generic method to handle API requests and stream processing for code generation flows.
    *
    * @param endpoint - The API endpoint to call
    * @param requestBody - The request body to send
@@ -118,11 +121,13 @@ export class Anima {
    * @param messageType - The type of messages being processed (for TypeScript type safety)
    * @returns The result of the generation process
    */
-  async #processGenerationRequest<T extends SSECodgenMessage | SSEL2CMessage>(
+  async #processGenerationRequest<
+    T extends SSECodegenMessage | SSEL2CMessage | SSEGetCodeFromPromptMessage,
+  >(
     endpoint: string,
     requestBody: any,
     handler: ((message: T) => void) | Record<string, any>,
-    messageType: "codegen" | "l2c",
+    messageType: "codegen" | "l2c" | "p2c",
     signal?: AbortSignal
   ): Promise<AnimaSDKResult> {
     if (this.hasAuth() === false) {
@@ -150,6 +155,10 @@ export class Anima {
       } catch {}
 
       if (errorObj?.error?.name === "ZodError") {
+        console.log(
+          "Zod validation error:",
+          JSON.stringify(errorObj.error.issues, null, 2)
+        );
         throw new CodegenError({
           name: "HTTP error from Anima API",
           reason: "Invalid body payload",
@@ -286,6 +295,15 @@ export class Anima {
                 break;
               }
 
+              case "progress_messages_updated": {
+                typeof handler === "function"
+                  ? handler(data)
+                  : handler.onProgressMessagesUpdated?.(
+                      data.payload.progressMessages
+                    );
+                break;
+              }
+
               case "codegen_completed":
               case "generation_completed": {
                 typeof handler === "function"
@@ -302,13 +320,6 @@ export class Anima {
               }
 
               case "done": {
-                if (!result.files) {
-                  throw new CodegenError({
-                    name: "Invalid response",
-                    reason: "No code generated",
-                  });
-                }
-
                 result.tokenUsage = (data as any).payload.tokenUsage;
                 result.sessionId = (data as any).payload.sessionId;
                 return result as AnimaSDKResult;
@@ -379,7 +390,7 @@ export class Anima {
       webhookUrl: params.webhookUrl,
     };
 
-    return this.#processGenerationRequest<SSECodgenMessage>(
+    return this.#processGenerationRequest<SSECodegenMessage>(
       "/v1/codegen",
       requestBody,
       handler,
@@ -437,6 +448,76 @@ export class Anima {
       requestBody,
       handler,
       "l2c",
+      signal
+    );
+  }
+
+  /**
+   * Generates code from a text prompt using AI.
+   *
+   * This method sends a prompt to the Anima API and generates code based on the description provided.
+   * It supports real-time streaming of the generation process through Server-Sent Events (SSE).
+   *
+   * @param params - The parameters for code generation
+   * @param params.prompt - The text prompt describing what code to generate
+   * @param params.settings - Code generation settings (framework, language, styling, etc.)
+   * @param params.assetsStorage - Optional asset storage configuration
+   * @param params.tracking - Optional tracking information
+   * @param params.webhookUrl - Optional webhook URL for completion notification
+   * @param handler - Event handler for processing SSE messages during generation
+   * @param signal - Optional AbortSignal to cancel the request
+   * @returns Promise resolving to AnimaSDKResult with generated files and metadata
+   *
+   * @example
+   * ```typescript
+   * const result = await anima.generateCodeFromPrompt({
+   *   prompt: "Create a login form with email and password fields",
+   *   settings: {
+   *     framework: "react",
+   *     language: "typescript",
+   *     styling: "tailwind"
+   *   }
+   * }, {
+   *   onStart: ({ sessionId }) => console.log("Started:", sessionId),
+   *   onGeneratingCode: ({ progress }) => console.log("Progress:", progress),
+   *   onCodegenCompleted: () => console.log("Generation completed!")
+   * });
+   * ```
+   */
+  async generateCodeFromPrompt(
+    params: GetCodeFromPromptParams,
+    handler: GetCodeFromPromptHandler = {},
+    signal?: AbortSignal
+  ) {
+    let tracking = params.tracking;
+    if (this.#auth && "userId" in this.#auth && this.#auth.userId) {
+      if (!tracking?.externalId) {
+        tracking = { externalId: this.#auth.userId };
+      }
+    }
+
+    const requestBody = {
+      tracking,
+      assetsStorage: params.assetsStorage,
+      params: {
+        prompt: params.prompt,
+        conventions: {
+          language: params.settings.language,
+          framework: params.settings.framework,
+          styling: params.settings.styling,
+          uiLibrary: params.settings.uiLibrary,
+        }
+      },
+      webhookUrl: params.webhookUrl,
+    };
+
+    console.log("P2C Request Body:", JSON.stringify(requestBody, null, 2));
+
+    return this.#processGenerationRequest<SSEGetCodeFromPromptMessage>(
+      "/v1/p2c",
+      requestBody,
+      handler,
+      "p2c",
       signal
     );
   }

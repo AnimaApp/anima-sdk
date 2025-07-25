@@ -1,4 +1,4 @@
-import type { CodegenErrorReason } from "../errors";
+import type { GetCodeFromFigmaErrorReason } from "../errors";
 
 const figmaTokenIssueErrorMessage = "Figma Token Issue";
 export class FigmaTokenIssue extends Error {
@@ -84,7 +84,7 @@ export const isRateLimitExceeded = (error: Error) => {
 };
 
 export const isFigmaTokenIssue = (error: Error) => {
-  const figmaTokenCodegenErrors: CodegenErrorReason[] = [
+  const figmaTokenCodegenErrors: GetCodeFromFigmaErrorReason[] = [
     "Invalid Figma token",
     "Figma token expired",
   ];

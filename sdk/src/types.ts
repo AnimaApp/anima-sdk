@@ -1,4 +1,8 @@
-import type { CodegenErrorReason, GetCodeFromWebsiteErrorReason } from "./errors";
+import type {
+  GetCodeFromFigmaErrorReason,
+  GetCodeFromWebsiteErrorReason,
+  GetCodeFromPromptErrorReason,
+} from "./errors";
 import type { CodegenSettings } from "./settings";
 
 export type AnimaFiles = Record<
@@ -9,10 +13,18 @@ export type AnimaFiles = Record<
   }
 >;
 
+export type ProgressMessage = {
+  id: string;
+  text: string;
+  attachments?: {
+    images?: string[];
+  };
+};
+
 export type BaseResult = {
   sessionId: string;
-  figmaFileName: string;
-  figmaSelectedFrameName: string;
+  figmaFileName?: string;
+  figmaSelectedFrameName?: string;
   tokenUsage: number;
 };
 
@@ -44,75 +56,40 @@ export type GetCodeParams = {
 };
 
 export type GetCodeHandler =
-  | ((message: SSECodgenMessage) => void)
+  | ((message: SSEGetCodeFromFigmaMessage) => void)
   | {
-    onQueueing?: () => void;
-    onStart?: ({ sessionId }: { sessionId: string }) => void;
-    onPreCodegen?: ({ message }: { message: string }) => void;
-    onAssetsUploaded?: () => void;
-    onAssetsList?: ({
-      assets,
-    }: {
-      assets: Array<{ name: string; url: string }>;
-    }) => void;
-    onFigmaMetadata?: ({
-      figmaFileName,
-      figmaSelectedFrameName,
-    }: {
-      figmaFileName: string;
-      figmaSelectedFrameName: string;
-    }) => void;
-    onGeneratingCode?: ({
-      status,
-      progress,
-      files,
-    }: {
-      status: "success" | "running" | "failure";
-      progress: number;
-      files: AnimaFiles;
-    }) => void;
-    onCodegenCompleted?: () => void;
-  };
+      onQueueing?: () => void;
+      onStart?: ({ sessionId }: { sessionId: string }) => void;
+      onPreCodegen?: ({ message }: { message: string }) => void;
+      onAssetsUploaded?: () => void;
+      onAssetsList?: ({
+        assets,
+      }: {
+        assets: Array<{ name: string; url: string }>;
+      }) => void;
+      onFigmaMetadata?: ({
+        figmaFileName,
+        figmaSelectedFrameName,
+      }: {
+        figmaFileName: string;
+        figmaSelectedFrameName: string;
+      }) => void;
+      onGeneratingCode?: ({
+        status,
+        progress,
+        files,
+      }: {
+        status: "success" | "running" | "failure";
+        progress: number;
+        files: AnimaFiles;
+      }) => void;
+      onCodegenCompleted?: () => void;
+    };
 
 export type GeneratingCodePayload = {
   status: "success" | "running" | "failure";
   progress: number;
   files: AnimaFiles;
-};
-
-// TODO: `SSECodgenMessage` and `SSECodgenMessageErrorPayload` should be imported from `anima-public-api`
-export type SSECodgenMessage =
-  | { type: "queueing" }
-  | { type: "start"; sessionId: string }
-  | { type: "pre_codegen"; message: string }
-  | {
-    type: "figma_metadata";
-    figmaFileName: string;
-    figmaSelectedFrameName: string;
-  }
-  | { type: "generating_code"; payload: GeneratingCodePayload }
-  | { type: "codegen_completed" }
-  | { type: "assets_uploaded" }
-  | {
-    type: "assets_list";
-    payload: { assets: Array<{ name: string; url: string }> };
-  }
-  | { type: "aborted" }
-  | { type: "error"; payload: SSECodgenMessageErrorPayload }
-  | { type: "done"; payload: { sessionId: string; tokenUsage: number } };
-
-
-export type SSECodgenMessageErrorPayload = {
-  errorName: string;
-  task?: string;
-  reason: CodegenErrorReason;
-};
-
-export type SSECodegenMessageErrorPayload = {
-  errorName: string;
-  task?: string;
-  reason: CodegenErrorReason;
-  sentryTraceId?: string;
 };
 
 export type GetCodeFromWebsiteParams = {
@@ -128,58 +105,155 @@ export type GetCodeFromWebsiteParams = {
 export type GetCodeFromWebsiteHandler =
   | ((message: SSEGetCodeFromWebsiteMessage) => void)
   | {
-    onQueueing?: () => void;
-    onStart?: ({ sessionId }: { sessionId: string }) => void;
-    onAssetsUploaded?: () => void;
-    onAssetsList?: ({
-      assets,
-    }: {
-      assets: Array<{ name: string; url: string }>;
-    }) => void;
-    onGeneratingCode?: ({
-      status,
-      progress,
-      files,
-    }: {
-      status: "success" | "running" | "failure";
-      progress: number;
-      files: AnimaFiles;
-    }) => void;
-    onCodegenCompleted?: () => void;
-  };
+      onQueueing?: () => void;
+      onStart?: ({ sessionId }: { sessionId: string }) => void;
+      onAssetsUploaded?: () => void;
+      onAssetsList?: ({
+        assets,
+      }: {
+        assets: Array<{ name: string; url: string }>;
+      }) => void;
+      onGeneratingCode?: ({
+        status,
+        progress,
+        files,
+      }: {
+        status: "success" | "running" | "failure";
+        progress: number;
+        files: AnimaFiles;
+      }) => void;
+      onCodegenCompleted?: () => void;
+    };
 
 export type GetCodeFromWebsiteSettings = {
   language?: "typescript";
   framework: "react" | "html";
-  styling:
-  | "tailwind"
-  | "inline_styles";
+  styling: "tailwind" | "inline_styles";
   uiLibrary?: "shadcn";
 };
 
-export type SSEGetCodeFromWebsiteMessage =
-  | { type: 'queueing' }
-  | { type: 'start'; sessionId: string }
-  | { type: 'generating_code'; payload: GeneratingCodePayload }
-  | { type: 'generation_completed' }
-  | { type: 'assets_uploaded' }
-  | { type: 'assets_list'; payload: { assets: Array<{ name: string; url: string }> } }
-  | { type: 'aborted' }
-  | { type: 'error'; payload: SSEGetCodeFromWebsiteMessageErrorPayload }
-  | { type: 'done'; payload: { sessionId: string; tokenUsage: number } };
+export type GetCodeFromPromptParams = {
+  prompt: string;
+  assetsStorage?: AssetsStorage;
+  settings: GetCodeFromPromptSettings;
+  tracking?: TrackingInfos;
+  webhookUrl?: string;
+};
 
-export type SSEGetCodeFromWebsiteMessageErrorPayload = {
+export type GetCodeFromPromptHandler =
+  | ((message: SSEGetCodeFromPromptMessage) => void)
+  | {
+      onQueueing?: () => void;
+      onStart?: ({ sessionId }: { sessionId: string }) => void;
+      onAssetsUploaded?: () => void;
+      onAssetsList?: ({
+        assets,
+      }: {
+        assets: Array<{ name: string; url: string }>;
+      }) => void;
+      onGeneratingCode?: ({
+        status,
+        progress,
+        files,
+      }: {
+        status: "success" | "running" | "failure";
+        progress: number;
+        files: AnimaFiles;
+      }) => void;
+      onCodegenCompleted?: () => void;
+    };
+
+export type GetCodeFromPromptSettings = {
+  language?: "typescript";
+  framework: "react" | "html";
+  styling: "tailwind" | "inline_styles";
+  uiLibrary?: "shadcn";
+};
+
+// SSE Messages
+
+export type SSECommonMessage =
+  | { type: "queueing" }
+  | {
+      type: "progress_messages_updated";
+      payload: { progressMessages: ProgressMessage[] };
+    }
+  | { type: "aborted" };
+
+export type SSEErrorPayload<Reason> = {
   errorName: string;
   task?: string;
-  reason: GetCodeFromWebsiteErrorReason;
+  reason: Reason;
   sentryTraceId?: string;
 };
+
+export type SSEGetCodeFromFigmaMessage =
+  | SSECommonMessage
+  | { type: "start"; sessionId: string }
+  | {
+      type: "figma_metadata";
+      figmaFileName: string;
+      figmaSelectedFrameName: string;
+    }
+  | { type: "pre_codegen"; message: string }
+  | { type: "generating_code"; payload: GeneratingCodePayload }
+  | { type: "codegen_completed" }
+  | { type: "post_codegen"; message: string }
+  | { type: "assets_uploaded" }
+  | {
+      type: "assets_list";
+      payload: { assets: Array<{ name: string; url: string }> };
+    }
+  | { type: "error"; payload: SSEGetCodeFromFigmaMessageErrorPayload }
+  | { type: "done"; payload: { sessionId: string; tokenUsage: number } };
+
+export type SSEGetCodeFromFigmaMessageErrorPayload =
+  SSEErrorPayload<GetCodeFromFigmaErrorReason>;
+
+export type SSEGetCodeFromWebsiteMessage =
+  | SSECommonMessage
+  | { type: "start"; sessionId: string }
+  | { type: "generating_code"; payload: GeneratingCodePayload }
+  | { type: "generation_completed" }
+  | { type: "post_codegen"; message: string }
+  | { type: "assets_uploaded" }
+  | {
+      type: "assets_list";
+      payload: { assets: Array<{ name: string; url: string }> };
+    }
+  | { type: "error"; payload: SSEGetCodeFromWebsiteMessageErrorPayload }
+  | { type: "done"; payload: { sessionId: string; tokenUsage: number } };
+
+export type SSEGetCodeFromWebsiteMessageErrorPayload =
+  SSEErrorPayload<GetCodeFromWebsiteErrorReason>;
+
+export type SSEGetCodeFromPromptMessage =
+  | SSECommonMessage
+  | { type: "start"; sessionId: string }
+  | { type: "generation_completed" }
+  | { type: "error"; payload: SSEGetCodeFromPromptMessageErrorPayload }
+  | { type: "done"; payload: { sessionId: string; tokenUsage: number } };
+
+export type SSEGetCodeFromPromptMessageErrorPayload =
+  SSEErrorPayload<GetCodeFromPromptErrorReason>;
+
+// Deprecated types
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type SSECodegenMessage = SSEGetCodeFromFigmaMessage;
+
+/**
+ * @deprecated This type is deprecated and will be removed soon.
+ */
+export type CodegenErrorReason = GetCodeFromFigmaErrorReason;
 
 /**
  * @deprecated This type is deprecated and will be removed soon.
  */
 export type L2CParamsUrlInput = {
-  type: 'url';
+  type: "url";
   url: string;
 };
 

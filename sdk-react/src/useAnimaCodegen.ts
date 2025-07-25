@@ -5,6 +5,7 @@ import type {
   GetCodeFromWebsiteParams,
   GetLink2CodeParams,
   StreamCodgenMessage,
+  ProgressMessage,
 } from "@animaapp/anima-sdk";
 import { CodegenError } from "@animaapp/anima-sdk";
 import { EventSource } from "eventsource";
@@ -39,6 +40,7 @@ type CodegenStatus = {
   status: Status;
   error: CodegenError | null;
   result: AnimaSDKResult | null;
+  progressMessages: ProgressMessage[];
   tasks: {
     fetchDesign: { status: TaskStatus };
     codeGeneration: { status: TaskStatus; progress: number };
@@ -50,6 +52,7 @@ const defaultProgress: CodegenStatus = {
   status: "idle",
   error: null,
   result: null,
+  progressMessages: [],
   tasks: {
     fetchDesign: { status: "pending" },
     codeGeneration: { status: "pending", progress: 0 },
@@ -193,6 +196,16 @@ export const useAnimaCodegen = ({
         updateStatus((draft) => {
           draft.tasks.codeGeneration.progress = message.payload.progress;
           draft.tasks.codeGeneration.status = "running";
+        });
+      });
+
+      es.addEventListener("progress_messages_updated", (event) => {
+        const message = JSON.parse(
+          event.data
+        ) as StreamMessageByType<"progress_messages_updated">;
+
+        updateStatus((draft) => {
+          draft.progressMessages = message.payload.progressMessages;
         });
       });
 
@@ -357,6 +370,7 @@ export const useAnimaCodegen = ({
   return {
     getCode,
     status: status.status,
+    progressMessages: status.progressMessages,
     tasks: status.tasks,
     error: status.error,
     result: status.result,
