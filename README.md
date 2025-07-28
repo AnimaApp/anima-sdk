@@ -8,8 +8,11 @@ The Anima SDK allows you to generate code from:
 
 * **Figma** -> Converts Figma designs into high-quality code.
 * **Websites** (Early Preview) -> Converts website URLs into high-quality code.
+* **Prompts** (Early Preview) -> Converts text descriptions into high-quality code.
 
-Here are some examples of how to use the Anima SDK to generate code from any Figma design or website.
+Check [`example-server`](/example-server) to see a thin example on how to expose an endpoint to call Anima API.
+
+Here are some snippets of how to use the Anima SDK to generate code from any Figma design, website, or text prompt.
 
 ## Example: Figma to Code
 
@@ -41,8 +44,6 @@ const { files } = await anima.generateCode({
 console.log(files); // High-quality React code from your Figma design!
 ```
 
-Check [`example-server`](/example-server) to see a thin example on how to expose an endpoint to call Anima API.
-
 ## Example: Website to Code (Early Preview)
 
 ```ts
@@ -70,7 +71,33 @@ const { files } = await anima.generateCodeFromWebsite({
 console.log(files); // High-quality React code from your website!
 ```
 
-Check [`example-server`](/example-server) to see a thin example on how to expose an endpoint to call Anima API.
+## Example: Prompt to Code (Early Preview)
+
+```ts
+import { Anima } from "@animaapp/anima-sdk";
+
+const anima = new Anima({
+  auth: {
+    token: "Your Anima Token",
+    userId: "x", // Optional, only used if you want to link the request to an external id
+  },
+});
+
+const { files } = await anima.generateCodeFromPrompt({
+  prompt: "Create a login form with email and password fields, a remember me checkbox, and a submit button", // Your description
+  settings: {
+    framework: "react",
+    language: "typescript",
+    styling: "tailwind",
+    uiLibrary: "shadcn",
+  },
+  tracking: {
+    externalId: "x", // Optional, used to override the userId from auth, if provided
+  },
+});
+
+console.log(files); // High-quality React code from your text description!
+```
 
 ## SDK
 
@@ -78,16 +105,16 @@ Check [`example-server`](/example-server) to see a thin example on how to expose
 
 ### Settings Options
 
-The following options can be passed to the `settings` parameter when calling `generateCode` or `generateCodeFromWebsite`.
+The following options can be passed to the `settings` parameter when calling `generateCode`, `generateCodeFromWebsite`, or `generateCodeFromPrompt`. 
 
-> Note: Not all options are available for both Figma designs and websites. We will mark the options that are available for each source.
+> Note: Not all options are available for all sources. We will mark the options that are available for each source.
 
 | Option                      | Type                                                                                                       | Description                                                                              |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `language`                  | `"typescript" \| "javascript"` <br><br> Note: only `typescript` is currently available for websites.                                                                             | The programming language to use for code generation.                                     |
+| `language`                  | `"typescript" \| "javascript"` <br><br> Note: only `typescript` is currently available for websites and prompts.                                                                             | The programming language to use for code generation.                                     |
 | `framework`                 | `"react" \| "html"`                                                                                        | The framework to use for code generation.                                                |
-| `styling`                   | `"plain_css" \| "css_modules" \| "styled_components" \| "tailwind" \| "sass" \| "scss" \| "inline_styles"` <br><br> Note: only `tailwind` is currently available for websites. | The styling approach to use for the generated code.                                      |
-| `uiLibrary`                 | `"mui" \| "antd" \| "radix" \| "shadcn"` <br><br> Note: only `shadcn` is currently available for websites. You can also omit this option to use vanilla React.                                                                   | The UI component library to use (React only).                                            |
+| `styling`                   | `"plain_css" \| "css_modules" \| "styled_components" \| "tailwind" \| "sass" \| "scss" \| "inline_styles"` <br><br> Note: only `tailwind` and `inline_styles` are currently available for websites and prompts. | The styling approach to use for the generated code.                                      |
+| `uiLibrary`                 | `"mui" \| "antd" \| "radix" \| "shadcn"` <br><br> Note: only `shadcn` is currently available for websites and prompts. You can also omit this option to use vanilla React.                                                                   | The UI component library to use (React only).                                            |
 | `responsivePages`           | `Array<{ name: string; framesId: string[] }>` <br><br> Note: only available for Figma designs.                                                              | When set, it overrides any responsive settings from the plugin.                          |
 | `enableTranslation`         | `boolean` <br><br> Note: only available for Figma designs.                                                                                                  | Enable translation support (HTML only).                                                  |
 | `enableCompactStructure`    | `boolean` <br><br> Note: only available for Figma designs.                                                                                                  | Generate a more compact file structure.                                                  |
@@ -155,7 +182,7 @@ These node IDs can then be used in the `nodesId` parameter when calling `generat
 
 The generated code may contain assets. You can choose whether to let us host them, or give you the assets links to download then you can host them, or return the assets together with the source files.
 
-> Note: Website imports currently only support the `host` and `external` strategies.
+> Note: Website and prompt imports currently only support the `host` and `external` strategies.
 
 #### Have Anima host your assets
 
