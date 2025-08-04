@@ -14,7 +14,7 @@ export type CommonApiError =
 /**
  * Codegen errors from the worker
  */
-export type CodegenErrorReason =
+export type GetCodeFromFigmaErrorReason =
   | "Selected node type is not supported"
   | "Invisible group nodes are unsupported"
   | "Selected node is a page with multiple children"
@@ -42,7 +42,6 @@ export type CodegenRouteErrorReason =
  */
 export type SDKErrorReason =
   | "Invalid body payload"
-  | "No code generated"
   | "Connection closed before the 'done' message"
   | "Response body is null";
 
@@ -50,6 +49,14 @@ export type SDKErrorReason =
  * Errors from the Website To Code Flow
  */
 export type GetCodeFromWebsiteErrorReason = "Scraping is blocked" | "Unknown";
+
+/**
+ * Errors from the Prompt To Code Flow
+ */
+export type GetCodeFromPromptErrorReason =
+  | "Invalid prompt"
+  | "Generation failed"
+  | "Unknown";
 
 export class CodegenError extends Error {
   status?: number;
@@ -64,10 +71,11 @@ export class CodegenError extends Error {
     name: string;
     reason:
       | CommonApiError
-      | CodegenErrorReason
+      | GetCodeFromFigmaErrorReason
       | CodegenRouteErrorReason
       | SDKErrorReason
-      | GetCodeFromWebsiteErrorReason;
+      | GetCodeFromWebsiteErrorReason
+      | GetCodeFromPromptErrorReason;
     status?: number;
     detail?: unknown;
   }) {
