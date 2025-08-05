@@ -52,8 +52,12 @@ const CodegenSettingsSchema = z
     ])
   );
 
+export type BaseSettings = {
+  codegenSettings?: Record<string, unknown>;
+};
+
 // We don't use the z.infer method here because the types returned by zod aren't ergonic
-export type CodegenSettings = {
+export type CodegenSettings = BaseSettings & {
   language?: "typescript" | "javascript";
   model?: string;
   framework: "react" | "html";
@@ -83,7 +87,6 @@ export type CodegenSettings = {
   enableDisplayDataId?: boolean;
   enableDisplayDataName?: boolean;
   url?: string;
-  codegenSettings?: Record<string, unknown>;
 };
 
 export const validateSettings = (obj: unknown): CodegenSettings => {

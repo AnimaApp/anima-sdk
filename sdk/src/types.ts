@@ -3,7 +3,7 @@ import type {
   GetCodeFromWebsiteErrorReason,
   GetCodeFromPromptErrorReason,
 } from "./errors";
-import type { CodegenSettings } from "./settings";
+import type { CodegenSettings, BaseSettings } from "./settings";
 
 export type AnimaFiles = Record<
   string,
@@ -125,7 +125,7 @@ export type GetCodeFromWebsiteHandler =
       onCodegenCompleted?: () => void;
     };
 
-export type GetCodeFromWebsiteSettings = {
+export type GetCodeFromWebsiteSettings = BaseSettings & {
   language?: "typescript";
   framework: "react" | "html";
   styling: "tailwind" | "inline_styles";
@@ -163,7 +163,7 @@ export type GetCodeFromPromptHandler =
       onCodegenCompleted?: () => void;
     };
 
-export type GetCodeFromPromptSettings = {
+export type GetCodeFromPromptSettings = BaseSettings & {
   language?: "typescript";
   framework: "react" | "html";
   styling: "tailwind" | "inline_styles";
