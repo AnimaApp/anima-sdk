@@ -507,7 +507,7 @@ export class Anima {
           styling: params.settings.styling,
           uiLibrary: params.settings.uiLibrary,
         },
-        ...(params.settings.p2cSettings ?? {}),
+        ...(params.settings.codegenSettings ?? {}),
       },
       webhookUrl: params.webhookUrl,
     };
