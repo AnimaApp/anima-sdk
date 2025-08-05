@@ -168,6 +168,7 @@ export type GetCodeFromPromptSettings = {
   framework: "react" | "html";
   styling: "tailwind" | "inline_styles";
   uiLibrary?: "shadcn";
+  p2cSettings?: Record<string, unknown>;
 };
 
 // SSE Messages
