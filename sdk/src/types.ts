@@ -101,6 +101,9 @@ export type GetCodeFromWebsiteParams = {
   settings: GetCodeFromWebsiteSettings;
   tracking?: TrackingInfos;
   webhookUrl?: string;
+
+  // Experimental options, will change in the future.
+  experimental_useNewReactEngine?: boolean;
 };
 
 export type GetCodeFromWebsiteHandler =

@@ -436,6 +436,11 @@ export class Anima {
       throw new Error("Either 'url' or 'mhtml' must be provided");
     }
 
+    let engine: "react-v2" | undefined = undefined;
+    if (params.experimental_useNewReactEngine) {
+      engine = "react-v2";
+    }
+
     const requestBody = {
       tracking,
       assetsStorage: params.assetsStorage,
@@ -449,6 +454,7 @@ export class Anima {
         assetsStorage: {
           type: "bundled",
         },
+        engine,
       },
     };
 
