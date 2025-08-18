@@ -224,7 +224,9 @@ export class Anima {
               case "queueing": {
                 typeof handler === "function"
                   ? handler(data)
-                  : handler.onQueueing?.();
+                  : handler.onQueueing?.({
+                      sessionId: (data as any).sessionId,
+                    });
                 break;
               }
               case "start": {
@@ -301,6 +303,13 @@ export class Anima {
                   : handler.onProgressMessagesUpdated?.(
                       data.payload.progressMessages
                     );
+                break;
+              }
+
+              case "job_status_updated": {
+                typeof handler === "function"
+                  ? handler(data)
+                  : handler.onJobStatusUpdated?.(data.payload.jobStatus);
                 break;
               }
 

@@ -15,7 +15,8 @@ export type AnimaFiles = Record<
 
 export type ProgressMessage = {
   id: string;
-  text: string;
+  title: string;
+  body: string;
   attachments?: {
     images?: string[];
   };
@@ -58,7 +59,7 @@ export type GetCodeParams = {
 export type GetCodeHandler =
   | ((message: SSEGetCodeFromFigmaMessage) => void)
   | {
-      onQueueing?: () => void;
+      onQueueing?: ({ sessionId }: { sessionId: string }) => void;
       onStart?: ({ sessionId }: { sessionId: string }) => void;
       onPreCodegen?: ({ message }: { message: string }) => void;
       onAssetsUploaded?: () => void;
@@ -105,7 +106,7 @@ export type GetCodeFromWebsiteParams = {
 export type GetCodeFromWebsiteHandler =
   | ((message: SSEGetCodeFromWebsiteMessage) => void)
   | {
-      onQueueing?: () => void;
+      onQueueing?: ({ sessionId }: { sessionId: string }) => void;
       onStart?: ({ sessionId }: { sessionId: string }) => void;
       onAssetsUploaded?: () => void;
       onAssetsList?: ({
@@ -143,7 +144,7 @@ export type GetCodeFromPromptParams = {
 export type GetCodeFromPromptHandler =
   | ((message: SSEGetCodeFromPromptMessage) => void)
   | {
-      onQueueing?: () => void;
+      onQueueing?: ({ sessionId }: { sessionId: string }) => void;
       onStart?: ({ sessionId }: { sessionId: string }) => void;
       onAssetsUploaded?: () => void;
       onAssetsList?: ({
@@ -173,10 +174,14 @@ export type GetCodeFromPromptSettings = BaseSettings & {
 // SSE Messages
 
 export type SSECommonMessage =
-  | { type: "queueing" }
+  | { type: "queueing"; payload: { sessionId: string } }
   | {
       type: "progress_messages_updated";
       payload: { progressMessages: ProgressMessage[] };
+    }
+  | {
+      type: "job_status_updated";
+      payload: { jobStatus: Record<string, any> };
     }
   | { type: "aborted" };
 

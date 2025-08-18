@@ -46,6 +46,8 @@ type CodegenStatus = {
     codeGeneration: { status: TaskStatus; progress: number };
     uploadAssets: { status: TaskStatus };
   };
+  jobSessionId: string | null;
+  jobStatus: Record<string, any>;
 };
 
 const defaultProgress: CodegenStatus = {
@@ -58,6 +60,8 @@ const defaultProgress: CodegenStatus = {
     codeGeneration: { status: "pending", progress: 0 },
     uploadAssets: { status: "pending" },
   },
+  jobSessionId: null,
+  jobStatus: {},
 };
 
 type StreamMessageByType<T extends StreamCodgenMessage["type"]> = Extract<
@@ -150,6 +154,16 @@ export const useAnimaCodegen = ({
         });
       });
 
+      es.addEventListener("queueing", (event) => {
+        const message = JSON.parse(
+          event.data
+        ) as StreamMessageByType<"queueing">;
+
+        updateStatus((draft) => {
+          draft.jobSessionId = message.payload.sessionId;
+        });
+      });
+
       es.addEventListener("pre_codegen", (event) => {
         const message = JSON.parse(
           event.data
@@ -206,6 +220,16 @@ export const useAnimaCodegen = ({
 
         updateStatus((draft) => {
           draft.progressMessages = message.payload.progressMessages;
+        });
+      });
+
+      es.addEventListener("job_status_updated", (event) => {
+        const message = JSON.parse(
+          event.data
+        ) as StreamMessageByType<"job_status_updated">;
+
+        updateStatus((draft) => {
+          draft.jobStatus = message.payload.jobStatus;
         });
       });
 
@@ -371,6 +395,8 @@ export const useAnimaCodegen = ({
     getCode,
     status: status.status,
     progressMessages: status.progressMessages,
+    jobSessionId: status.jobSessionId,
+    jobStatus: status.jobStatus,
     tasks: status.tasks,
     error: status.error,
     result: status.result,
