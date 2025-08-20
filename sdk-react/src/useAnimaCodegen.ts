@@ -151,6 +151,7 @@ export const useAnimaCodegen = ({
 
         updateStatus((draft) => {
           draft.tasks.fetchDesign.status = "running";
+          draft.jobSessionId = message.sessionId;
         });
       });
 
