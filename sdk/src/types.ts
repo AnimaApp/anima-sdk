@@ -16,10 +16,9 @@ export type AnimaFiles = Record<
 export type ProgressMessage = {
   id: string;
   title: string;
-  body: string;
-  attachments?: {
-    images?: string[];
-  };
+  subtitle?: string;
+  body?: string;
+  status: "success" | "running";
 };
 
 export type BaseResult = {
