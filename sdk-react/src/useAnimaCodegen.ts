@@ -289,6 +289,8 @@ export const useAnimaCodegen = ({
           if (
             errorPayload?.payload?.name === "Task Crashed" ||
             errorPayload?.payload?.name === "TimeoutError" ||
+            errorPayload?.payload?.name === "Error" ||
+            errorPayload?.payload?.name === "Unknown error" ||
             errorStatusCode === 429
           ) {
             isUnrecoverableError = true;
