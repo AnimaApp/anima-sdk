@@ -47,6 +47,7 @@ type CodegenStatus = {
     uploadAssets: { status: TaskStatus };
   };
   jobSessionId: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   jobStatus: Record<string, any>;
 };
 
@@ -141,7 +142,7 @@ export const useAnimaCodegen = ({
     const promise = new Promise<{
       result: AnimaSDKResult | null;
       error: CodegenError | null;
-    }>((resolve) => {
+    }>((resolve, reject) => {
       const result: Partial<AnimaSDKResult> = {};
 
       // Add specific event listeners
@@ -264,38 +265,53 @@ export const useAnimaCodegen = ({
 
       // TODO: For some reason, we receive errors even after the `done` event is triggered.
       es.addEventListener("error", async (error: ErrorEvent | MessageEvent) => {
+        // Check if the fetch is ok.
+        // If it is't, then the request failed before creating the job and we should terminate the request.
+        const response = await lastFetchResponse;
+        if (!response.ok) {
+          let errorPayload = "";
+          try {
+            errorPayload = await response.text();
+            errorPayload = JSON.parse(errorPayload);
+          } catch {}
+
+          reject(
+            new CodegenError({
+              name: "Request failed",
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              reason: errorPayload as any,
+              status: response.status,
+            })
+          );
+          es.close();
+
+          return;
+        }
+
         console.warn(
           `Experienced error during code generation (attempt ${errorCount + 1} / ${MAX_RETRIES_AFTER_ERROR})`,
-          error,
+          error
         );
 
         let errorPayload: StreamMessageByType<"error"> | undefined;
-        let errorStatusCode: number | undefined;
 
         // If true, then there's no point into keeping the event handler alive for retries.
         let isUnrecoverableError = false;
 
-        try {
-          if (error instanceof MessageEvent) {
+        if (error instanceof MessageEvent) {
+          try {
             errorPayload = JSON.parse(error.data);
-          } else {
-            const response = await lastFetchResponse;
-            errorStatusCode = response.status;
-            try {
-              errorPayload = await response.json();
-            } catch {}
-          }
+          } catch {}
+        }
 
-          if (
-            errorPayload?.payload?.name === "Task Crashed" ||
-            errorPayload?.payload?.name === "TimeoutError" ||
-            errorPayload?.payload?.name === "Error" ||
-            errorPayload?.payload?.name === "Unknown error" ||
-            errorStatusCode === 429
-          ) {
-            isUnrecoverableError = true;
-          }
-        } catch {}
+        if (
+          errorPayload?.payload?.name === "Task Crashed" ||
+          errorPayload?.payload?.name === "TimeoutError" ||
+          errorPayload?.payload?.name === "Error" ||
+          errorPayload?.payload?.name === "Unknown error"
+        ) {
+          isUnrecoverableError = true;
+        }
 
         const codegenError = new CodegenError({
           name: errorPayload?.payload.name ?? "Unknown error",
