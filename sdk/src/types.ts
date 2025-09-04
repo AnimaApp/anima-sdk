@@ -184,6 +184,7 @@ export type SSECommonMessage =
     }
   | {
       type: "job_status_updated";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       payload: { jobStatus: Record<string, any> };
     }
   | { type: "aborted" };
