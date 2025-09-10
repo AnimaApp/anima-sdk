@@ -247,17 +247,20 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
       // If it is't, then the request failed before creating the job and we should terminate the request.
       const response = await lastFetchResponse;
       if (!response.ok) {
-        let errorPayload = "";
+        let errorMessage = "";
         try {
-          errorPayload = await response.text();
-          errorPayload = JSON.parse(errorPayload);
+          errorMessage = await response.text();
+          const errorPayloadJson = JSON.parse(errorMessage);
+          if (errorPayloadJson?.payload?.message) {
+            errorMessage = errorPayloadJson.payload.message;
+          }
         } catch {}
 
         reject(
           new CodegenError({
             name: "Request failed",
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            reason: errorPayload as any,
+            reason: errorMessage as any,
             status: response.status,
           })
         );
