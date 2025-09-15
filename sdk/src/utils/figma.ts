@@ -9,7 +9,10 @@ export const isValidFigmaUrl = (
     const url = new URL(figmaLink);
     const path = url.pathname;
 
-    if (url.origin !== "https://www.figma.com") {
+    if (
+      url.origin !== "https://www.figma.com" &&
+      url.origin !== "https://embed.figma.com"
+    ) {
       return [false, "", ""];
     }
 
