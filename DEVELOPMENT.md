@@ -5,7 +5,7 @@
 1. Install the dependencies from the monorepo root:
 
 ```
-yarn
+pnpm install
 ```
 
 2. Install the dependencies from Playwright to run the tests:
@@ -19,13 +19,13 @@ npx playwright install --with-deps
 4. Start all the dev scripts:
 
 ```
-yarn dev
+pnpm install storybook
 ```
 
 5. Run the tests. Note: You need to start the development server firstly before running the tests:
 
 ```
-yarn test
+pnpm install test
 ```
 
 ## Testing
@@ -41,7 +41,7 @@ Whenever you need to test a different case, you should update this design and up
 2. Run this command:
 
 ```
-yarn update-design-test-snapshot
+pnpm update-design-test-snapshot
 ```
 
 ## Publishing

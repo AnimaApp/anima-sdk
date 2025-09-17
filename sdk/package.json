@@ -1,11 +1,10 @@
 {
   "name": "@animaapp/anima-sdk",
-  "version": "0.6.34",
+  "version": "0.7.0",
   "type": "module",
   "description": "Anima's JavaScript utilities library",
   "author": "Anima App, Inc.",
   "license": "ISC",
-  "packageManager": "yarn@4.6.0",
   "exports": {
     "import": "./dist/index.js",
     "require": "./dist/index.cjs"
@@ -22,7 +21,6 @@
     "build": "vite build",
     "dev": "vite build --watch",
     "test": "vitest --watch=false",
-    "prepack": "yarn build",
     "update-design-test-snapshot": "tsx tests/design/update.ts"
   },
   "files": [

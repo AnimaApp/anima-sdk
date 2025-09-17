@@ -6,6 +6,9 @@ import {
   UseAnimaParams,
 } from "./createJob";
 
+/**
+ * @deprecated use `createJob` from `AnimaSdkProvider` instead
+ */
 export const useAnimaCodegen = ({
   url,
   method = "POST",

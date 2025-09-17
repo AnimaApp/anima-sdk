@@ -14,28 +14,29 @@ workflows:
 jobs:
   lint:
     docker:
-      - image: cimg/node:18.20.3
+      - image: cimg/node:22.19.0
     steps:
       - checkout
       - run:
           name: Install dependencies
           command: |
             corepack enable || sudo corepack enable
-            yarn
+            pnpm install
       - run:
           name: Run linting
-          command: yarn lint
+          command: pnpm lint
 
   publish:
     docker:
-      - image: cimg/node:18.20.3
+      - image: cimg/node:22.19.0
     steps:
       - checkout
       - run:
           name: Install dependencies
           command: |
             corepack enable || sudo corepack enable
-            yarn
+            pnpm install
+            pnpm run build
       - run:
           name: Set .npmrc for NPM publish
           command: |
@@ -43,7 +44,7 @@ jobs:
             echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
       - run:
           name: Publish to NPM
-          command: yarn publish
+          command: pnpm publish
       - run:
           name: Set .npmrc for GitHub Packages publish
           command: |
@@ -53,4 +54,4 @@ jobs:
             echo "//npm.pkg.github.com/:_authToken=$GITHUB_PACKAGE_TOKEN" >> .npmrc
       - run:
           name: Publish to GitHub Packages
-          command: yarn publish
+          command: pnpm publish

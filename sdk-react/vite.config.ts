@@ -14,7 +14,7 @@ export default defineConfig({
     target: "es6",
     sourcemap: true,
     rollupOptions: {
-      external: ["react"],
+      external: ["react", "@animaapp/anima-sdk"],
     },
   },
   plugins: [
@@ -22,6 +22,8 @@ export default defineConfig({
     dts({
       rollupTypes: true,
       insertTypesEntry: true,
+      include: ["src/**/*"],
+      exclude: ["../example-server/**/*", "**/*.stories.*", "**/*.test.*"],
     }),
   ],
 });
