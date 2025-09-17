@@ -4,11 +4,35 @@
     "dev": {
       "outputs": [
         "dist/**"
+      ],
+      "dependsOn": [
+        "^build"
+      ]
+    },
+    "@animaapp/anima-sdk#dev": {
+      "outputs": [
+        "dist/**"
+      ]
+    },
+    "@animaapp/anima-sdk-react#dev": {
+      "dependsOn": [
+        "@animaapp/anima-sdk#build"
+      ],
+      "outputs": [
+        "dist/**"
       ]
     },
     "build": {
       "dependsOn": [
         "^build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
+    },
+    "@animaapp/anima-sdk-react#build": {
+      "dependsOn": [
+        "@animaapp/anima-sdk#build"
       ],
       "outputs": [
         "dist/**"

@@ -1,11 +1,10 @@
 {
   "name": "@animaapp/anima-sdk-react",
-  "version": "0.6.34",
+  "version": "0.7.0",
   "type": "module",
   "description": "Anima's JavaScript utilities library",
   "author": "Anima App, Inc.",
   "license": "ISC",
-  "packageManager": "yarn@4.6.0",
   "exports": {
     "import": "./dist/index.js",
     "require": "./dist/index.cjs"
@@ -19,10 +18,10 @@
     "access": "public"
   },
   "scripts": {
-    "build": "vite build",
+    "build": "sleep 3 && vite build",
+    "dev": "sleep 3 && vite build --watch",
     "test": "test-storybook",
-    "prepack": "yarn build",
-    "dev": "storybook dev -p 6006"
+    "storybook": "storybook dev -p 6006"
   },
   "files": [
     "dist"
