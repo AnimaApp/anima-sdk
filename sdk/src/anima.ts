@@ -397,6 +397,8 @@ export class Anima {
       enableDisplayDataName: settings.enableDisplayDataName,
       codegenSettings: settings.codegenSettings,
       webhookUrl: params.webhookUrl,
+      prompt: params.prompt,
+      images: params.images,
     };
 
     return this.#processGenerationRequest<SSECodegenMessage>(
@@ -444,6 +446,8 @@ export class Anima {
     const requestBody = {
       tracking,
       assetsStorage: params.assetsStorage,
+      prompt: params.prompt,
+      images: params.images,
       params: {
         input,
         conventions: {

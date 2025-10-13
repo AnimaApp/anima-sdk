@@ -53,6 +53,8 @@ export type GetCodeParams = {
   settings: CodegenSettings;
   tracking?: TrackingInfos;
   webhookUrl?: string;
+  prompt?: string;
+  images?: Array<{ url: string }>;
 };
 
 export type GetCodeHandler =
@@ -100,6 +102,8 @@ export type GetCodeFromWebsiteParams = {
   settings: GetCodeFromWebsiteSettings;
   tracking?: TrackingInfos;
   webhookUrl?: string;
+  prompt?: string;
+  images?: Array<{ url: string }>;
 
   // Experimental options, will change in the future.
   experimental_useNewReactEngine?: boolean;
