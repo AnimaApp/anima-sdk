@@ -88,6 +88,7 @@ export type CodegenSettings = BaseSettings & {
   enableDisplayDataName?: boolean;
   url?: string;
   prompt?: string;
+  images?: Array<{ url: string }>;
 };
 
 export const validateSettings = (obj: unknown): CodegenSettings => {
