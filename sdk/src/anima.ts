@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { GetFileResponse } from "@figma/rest-api-spec";
+import { gzip } from "pako";
 import { CodegenError, CodegenRouteErrorReason } from "./errors";
 import { getFigmaFile } from "./figma";
 import { validateSettings } from "./settings";
@@ -68,34 +69,12 @@ export class Anima {
   }
 
   async #checkGivenNodeIsValid(
-    fileKey: string,
-    figmaToken: string,
+    design: GetFileResponse,
     nodesId: string[],
     options: {
       allowAutoSelectFirstNode: boolean;
-    },
-    signal?: AbortSignal
-  ) {
-    let design: GetFileResponse;
-    try {
-      design = await getFigmaFile({
-        fileKey,
-        authToken: figmaToken,
-        params: {
-          geometry: "paths",
-        },
-        signal,
-      });
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        // The caller aborted the request, no need to fall through
-        throw error;
-      }
-
-      // ignore all errors when trying to get the figma file to retry later in the backend
-      return;
     }
-
+  ) {
     const isCompatibleResults = nodesId.map((nodeId) =>
       isNodeCodegenCompatible(design, nodeId, options)
     );
@@ -116,7 +95,7 @@ export class Anima {
    * Generic method to handle API requests and stream processing for code generation flows.
    *
    * @param endpoint - The API endpoint to call
-   * @param requestBody - The request body to send
+   * @param requestJson - The JSON to send
    * @param handler - The handler for processing messages
    * @param messageType - The type of messages being processed (for TypeScript type safety)
    * @returns The result of the generation process
@@ -125,7 +104,7 @@ export class Anima {
     T extends SSECodegenMessage | SSEL2CMessage | SSEGetCodeFromPromptMessage,
   >(
     endpoint: string,
-    requestBody: any,
+    requestJson: object,
     handler: ((message: T) => void) | Record<string, any>,
     messageType: "codegen" | "l2c" | "p2c",
     signal?: AbortSignal
@@ -136,13 +115,17 @@ export class Anima {
 
     const result: Partial<AnimaSDKResult> = {};
 
+    const requestBody = gzip(JSON.stringify(requestJson));
+
     const response = await fetch(`${this.#apiBaseAddress}${endpoint}`, {
       method: "POST",
       headers: {
         ...this.headers,
         Accept: "text/event-stream",
+        "Content-Encoding": "gzip",
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(requestBody),
+      body: requestBody,
       signal,
     });
 
@@ -353,16 +336,31 @@ export class Anima {
     handler: GetCodeHandler = {},
     signal?: AbortSignal
   ) {
+    let design: GetFileResponse | undefined;
+    try {
+      design = await getFigmaFile({
+        fileKey: params.fileKey,
+        authToken: params.figmaToken,
+        params: {
+          geometry: "paths",
+        },
+        signal,
+      });
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        // The caller aborted the request, no need to fall through
+        throw error;
+      }
+
+      // ignore any errors when trying to get the figma file to retry later in the backend
+    }
+
     const settings = validateSettings(params.settings);
 
-    if (params.figmaToken) {
-      await this.#checkGivenNodeIsValid(
-        params.fileKey,
-        params.figmaToken,
-        params.nodesId,
-        { allowAutoSelectFirstNode: settings.allowAutoSelectFirstNode ?? true },
-        signal
-      );
+    if (design) {
+      await this.#checkGivenNodeIsValid(design, params.nodesId, {
+        allowAutoSelectFirstNode: settings.allowAutoSelectFirstNode ?? true,
+      });
     }
 
     let tracking = params.tracking;
@@ -372,11 +370,12 @@ export class Anima {
       }
     }
 
-    const requestBody = {
+    const requestJson = {
       tracking,
       fileKey: params.fileKey,
       figmaToken: params.figmaToken,
       nodesId: params.nodesId,
+      design,
       assetsStorage: params.assetsStorage,
       language: settings.language,
       model: settings.model,
@@ -403,7 +402,7 @@ export class Anima {
 
     return this.#processGenerationRequest<SSECodegenMessage>(
       "/v1/codegen",
-      requestBody,
+      requestJson,
       handler,
       "codegen",
       signal
@@ -443,7 +442,7 @@ export class Anima {
       engine = "react-v2";
     }
 
-    const requestBody = {
+    const requestJson = {
       tracking,
       assetsStorage: params.assetsStorage,
       prompt: params.prompt,
@@ -464,7 +463,7 @@ export class Anima {
 
     return this.#processGenerationRequest<SSEGetCodeFromWebsiteMessage>(
       "/v1/l2c",
-      requestBody,
+      requestJson,
       handler,
       "l2c",
       signal
@@ -515,7 +514,7 @@ export class Anima {
       }
     }
 
-    const requestBody = {
+    const requestJson = {
       tracking,
       assetsStorage: params.assetsStorage,
       params: {
@@ -532,11 +531,9 @@ export class Anima {
       webhookUrl: params.webhookUrl,
     };
 
-    console.log("P2C Request Body:", JSON.stringify(requestBody, null, 2));
-
     return this.#processGenerationRequest<SSEGetCodeFromPromptMessage>(
       "/v1/p2c",
-      requestBody,
+      requestJson,
       handler,
       "p2c",
       signal
@@ -558,7 +555,7 @@ export class Anima {
       }
     }
 
-    const requestBody = {
+    const requestJson = {
       tracking,
       assetsStorage: params.assetsStorage,
       params: params.params,
@@ -566,7 +563,7 @@ export class Anima {
 
     return this.#processGenerationRequest<SSEL2CMessage>(
       "/v1/l2c",
-      requestBody,
+      requestJson,
       handler,
       "l2c",
       signal
