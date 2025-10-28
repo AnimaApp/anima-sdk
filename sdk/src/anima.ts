@@ -375,7 +375,6 @@ export class Anima {
       fileKey: params.fileKey,
       figmaToken: params.figmaToken,
       nodesId: params.nodesId,
-      design,
       assetsStorage: params.assetsStorage,
       language: settings.language,
       model: settings.model,
