@@ -331,6 +331,9 @@ function FigmaNodeExplorer() {
   );
 }
 ```
+## Installing the SDK
+to install the SDK, use:
+```npm i @animaapp/anima-sdk```
 
 ## Contributing
 
