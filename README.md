@@ -34,11 +34,17 @@ Let's explore each package in detail.
 
 ## `anima-sdk`
 
+### Installing the Anima SDK
+
+The Anima SDK is hosted on NPM, so you can add it to your project with:
+
+```npm i @animaapp/anima-sdk```
+
+### Code Generation Examples
+
 Check [`example-server`](/example-server) for a tiny implementation of an endpoint that calls the Anima API.
 
 Below are code examples for generating code from different sources.
-
-### Code Generation Examples
 
 #### Convert Figma Designs to Code
 
@@ -157,6 +163,12 @@ console.log(files); // High-quality React code from your text description!
 ```
 
 ## `anima-sdk-react`
+
+### Installing the Anima React SDK
+
+The Anima React SDK is hosted on NPM, so you can add it to your project with:
+
+```npm i @animaapp/anima-sdk-react```
 
 ### Getting Started
 
@@ -331,9 +343,6 @@ function FigmaNodeExplorer() {
   );
 }
 ```
-## Installing the SDK
-to install the SDK, use:
-```npm i @animaapp/anima-sdk```
 
 ## Contributing
 
