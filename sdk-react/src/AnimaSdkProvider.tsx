@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { AnimaFiles, ProgressMessage } from '@animaapp/anima-sdk';
+import { FigmaRestApi } from '@animaapp/anima-sdk';
 import { initialProgress, createJob as sdkCreateJob, UseAnimaParams } from './createJob';
 
 type JobType = 'f2c' | 'l2c' | 'p2c';
@@ -41,9 +42,11 @@ type Job =
 type AnimaSdkContextType = {
   createJob: <T extends UseAnimaParams = UseAnimaParams>(type: JobType, params: T) => Promise<void>;
   job: Job;
+  figmaRestApi: FigmaRestApi;
 };
 
 type Props = {
+  figmaRestApi: FigmaRestApi;
   f2cUrl: string;
   l2cUrl: string;
   p2cUrl: string;
@@ -67,7 +70,7 @@ export class UnknownCodegenError extends Error {
 
 export const AnimaSdkContext = createContext<AnimaSdkContextType | null>(null);
 
-export function AnimaSdkProvider({ f2cUrl, l2cUrl, p2cUrl, children }: Props) {
+export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, children }: Props) {
   const [job, setJob] = useState<Job>({ status: 'idle' });
   const currentJobType = useRef<JobType | null>(null);
   const [rawState, setRawState] = useState(initialProgress);
@@ -169,6 +172,7 @@ export function AnimaSdkProvider({ f2cUrl, l2cUrl, p2cUrl, children }: Props) {
       value={{
         createJob,
         job,
+        figmaRestApi,
       }}
     >
       {children}

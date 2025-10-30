@@ -1,9 +1,9 @@
+import type { GetFileResponse } from "@figma/rest-api-spec";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import { getFigmaFile } from "../../src";
-import { GetFileResponse } from "@figma/rest-api-spec";
+import { FigmaRestApi } from "../../src";
 
 dotenv.config();
 
@@ -12,6 +12,12 @@ const figmaAuthToken = process.env.FIGMA_AUTH_TOKEN;
 if (!figmaAuthToken) {
   throw new Error('Missing environment variable "FIGMA_AUTH_TOKEN"');
 }
+
+const figmaRestApi = new FigmaRestApi({
+  defaultOptions: {
+    token: figmaAuthToken,
+  },
+});
 
 const getDesingFilePath = () => {
   const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -29,12 +35,8 @@ export default ${JSON.stringify(design, null, 2)} satisfies GetFileResponse;`;
 };
 
 const update = async () => {
-  const design = await getFigmaFile({
+  const design = await figmaRestApi.getFile({
     fileKey: "5d0u9PmD4GtB5fdX57pTtK",
-    authToken: figmaAuthToken,
-    params: {
-      geometry: "paths",
-    },
   });
 
   const designFilePath = getDesingFilePath();

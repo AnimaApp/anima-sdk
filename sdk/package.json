@@ -27,8 +27,8 @@
     "dist"
   ],
   "dependencies": {
-    "@animaapp/http-client-figma": "^1.0.3",
     "@figma/rest-api-spec": "^0.27.0",
+    "deepcopy": "^2.1.0",
     "pako": "^2.1.0",
     "zod": "^3.24.2"
   },
@@ -36,9 +36,9 @@
     "@types/pako": "^2.0.4",
     "dotenv": "^16.4.7",
     "tsx": "^4.19.3",
-    "vite": "^6.2.4",
+    "vite": "^7.1.12",
     "vite-plugin-dts": "^4.5.3",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.1.1"
+    "vitest": "^4.0.4"
   }
 }
