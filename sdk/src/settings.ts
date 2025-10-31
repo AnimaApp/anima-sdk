@@ -13,15 +13,7 @@ const CodegenSettingsSchema = z
       z.object({
         framework: z.literal("react"),
         model: z.string().optional(),
-        styling: z.enum([
-          "plain_css",
-          "css_modules",
-          "styled_components",
-          "tailwind",
-          "sass",
-          "scss",
-          "inline_styles",
-        ]),
+        styling: z.enum(["plain_css", "tailwind", "inline_styles"]),
         uiLibrary: z
           .enum(["mui", "antd", "radix", "shadcn", "clean_react"])
           .optional(),
@@ -61,14 +53,7 @@ export type CodegenSettings = BaseSettings & {
   language?: "typescript" | "javascript";
   model?: string;
   framework: "react" | "html";
-  styling:
-    | "plain_css"
-    | "css_modules"
-    | "styled_components"
-    | "tailwind"
-    | "sass"
-    | "scss"
-    | "inline_styles";
+  styling: "plain_css" | "tailwind" | "inline_styles";
   uiLibrary?: "mui" | "antd" | "radix" | "shadcn" | "clean_react";
   responsivePages?: Array<{
     name: string;
