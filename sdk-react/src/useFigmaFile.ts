@@ -1,5 +1,5 @@
 import useSWR from "swr";
-import { getFigmaFile } from "@animaapp/anima-sdk";
+import { useAnimaSDK } from "./AnimaSdkProvider";
 
 export const useFigmaFile = ({
   fileKey,
@@ -8,12 +8,14 @@ export const useFigmaFile = ({
   params = {},
 }: {
   fileKey: string;
-  authToken: string;
+  authToken?: string;
   enabled?: boolean;
   params?: {
     depth?: number;
   };
 }) => {
+  const { figmaRestApi } = useAnimaSDK();
+
   const isEnabled = Boolean(enabled && fileKey && authToken);
 
   const { data, isLoading, error } = useSWR(
@@ -23,11 +25,12 @@ export const useFigmaFile = ({
         return null;
       }
 
-      return getFigmaFile({
-        fileKey,
-        authToken,
-        params,
-      });
+      return figmaRestApi
+        .withOptions(authToken ? { token: authToken } : {})
+        .getFile({
+          fileKey,
+          depth: params.depth,
+        });
     },
     {
       revalidateIfStale: false,

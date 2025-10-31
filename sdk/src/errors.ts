@@ -86,3 +86,78 @@ export class CodegenError extends Error {
     this.status = status;
   }
 }
+
+/**
+ * Figma REST API Errors
+ */
+
+export class InvalidFigmaAccessTokenError extends Error {
+  constructor() {
+    super("Invalid Figma Access Token");
+  }
+}
+
+export class MissingFigmaToken extends Error {
+  constructor() {
+    super("Missing Figma Token");
+  }
+}
+
+const figmaTokenIssueErrorMessage = "Figma Token Issue";
+export class FigmaTokenIssue extends Error {
+  constructor({ cause }: { cause?: unknown }) {
+    super(figmaTokenIssueErrorMessage);
+    this.cause = cause;
+  }
+}
+export const isFigmaTokenIssue = (error: Error) => {
+  return error.message === figmaTokenIssueErrorMessage;
+};
+
+const notFoundErrorMessage = "Not Found";
+export class NotFound extends Error {
+  constructor({ cause }: { cause?: unknown }) {
+    super(notFoundErrorMessage);
+
+    this.cause = cause;
+  }
+}
+export const isNotFound = (error: Error) => {
+  return error.message === notFoundErrorMessage;
+};
+
+const unknownFigmaApiExceptionMessage = "Unknown Figma API Exception";
+export class UnknownFigmaApiException extends Error {
+  constructor({ cause }: { cause: unknown }) {
+    super(unknownFigmaApiExceptionMessage);
+
+    this.cause = cause;
+  }
+}
+export const isUnknownFigmaApiException = (error: Error) => {
+  return error.message === unknownFigmaApiExceptionMessage;
+};
+
+const rateLimitExceededErrorMessage = "Rate Limit Exceeded";
+export class RateLimitExceeded extends Error {
+  constructor({ cause }: { cause?: unknown }) {
+    super(rateLimitExceededErrorMessage);
+
+    this.cause = cause;
+  }
+}
+export const isRateLimitExceeded = (error: Error) => {
+  return error.message === rateLimitExceededErrorMessage;
+};
+
+const requestTooLargeMessage = "Request Too Large";
+export class RequestTooLarge extends Error {
+  constructor({ cause }: { cause?: unknown }) {
+    super(requestTooLargeMessage);
+
+    this.cause = cause;
+  }
+}
+export const isRequestTooLarge = (error: Error) => {
+  return error.message === requestTooLargeMessage;
+};

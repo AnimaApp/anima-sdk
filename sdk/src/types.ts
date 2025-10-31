@@ -15,6 +15,7 @@ export type AnimaFiles = Record<
 
 export type ProgressMessage = {
   id: string;
+  type: "info" | "rate_limit";
   title: string;
   subtitle?: string;
   body?: string;
@@ -48,6 +49,7 @@ export type TrackingInfos = {
 export type GetCodeParams = {
   fileKey: string;
   figmaToken?: string;
+  figmaRateLimitMaxWait?: number;
   nodesId: string[];
   assetsStorage?: AssetsStorage;
   settings: CodegenSettings;
@@ -278,23 +280,23 @@ export type L2CParamsInput = L2CParamsUrlInput;
 /**
  * @deprecated This type is deprecated and will be removed soon.
  */
-export type L2CParamsFramework = 'html' | 'react';
+export type L2CParamsFramework = "html" | "react";
 
 /**
  * @deprecated This type is deprecated and will be removed soon.
  */
-export type L2CParamsLanguage = 'typescript';
+export type L2CParamsLanguage = "typescript";
 
 /**
  * @deprecated This type is deprecated and will be removed soon.
  */
-export type L2CParamsStyling = 'tailwind' | 'inline-styles';
+export type L2CParamsStyling = "tailwind" | "inline-styles";
 
 /**
  * @deprecated This type is deprecated and will be removed soon.
  */
 export type L2CParamsHtmlConvention = {
-  framework: 'html';
+  framework: "html";
   styling: L2CParamsStyling;
 };
 
@@ -302,7 +304,7 @@ export type L2CParamsHtmlConvention = {
  * @deprecated This type is deprecated and will be removed soon.
  */
 export type L2CParamsReactConvention = {
-  framework: 'react';
+  framework: "react";
   language: L2CParamsLanguage;
   styling: L2CParamsStyling;
   enableGeneratePackageLock?: boolean;
@@ -319,9 +321,9 @@ export type L2CParamsConvention =
  * @deprecated This type is deprecated and will be removed soon.
  */
 export type L2CParamsBundledAssetsStorage = {
-  type: 'bundled';
+  type: "bundled";
   referencePath?: string;
-  importMode?: 'watermarked' | 'original';
+  importMode?: "watermarked" | "original";
 };
 
 /**
@@ -336,7 +338,7 @@ export type L2CParams = {
   input: L2CParamsInput;
   conventions: L2CParamsConvention;
   assetsStorage: L2CParamsAssetsStorage;
-  viewports?: Array<'desktop' | 'tablet' | 'mobile'>;
+  viewports?: Array<"desktop" | "tablet" | "mobile">;
 };
 
 /**

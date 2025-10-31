@@ -2,7 +2,6 @@
 import { GetFileResponse } from "@figma/rest-api-spec";
 import { gzip } from "pako";
 import { CodegenError, CodegenRouteErrorReason } from "./errors";
-import { getFigmaFile } from "./figma";
 import { validateSettings } from "./settings";
 import {
   AnimaSDKResult,
@@ -20,6 +19,7 @@ import {
   SSEL2CMessage,
 } from "./types";
 import { isNodeCodegenCompatible } from "./utils/isNodeCodegenCompatible";
+import { FigmaRestApi } from "./FigmaRestApi";
 
 export type Auth =
   | { token: string; teamId: string } // for Anima user, it's mandatory to have an associated team
@@ -28,16 +28,20 @@ export type Auth =
 export class Anima {
   #auth?: Auth;
   #apiBaseAddress: string;
+  #figmaRestApi: FigmaRestApi;
 
   constructor({
     auth,
     apiBaseAddress = "https://public-api.animaapp.com",
+    figmaRestApi = new FigmaRestApi(),
   }: {
     auth?: Auth;
     apiBaseAddress?: string;
     path?: string;
+    figmaRestApi?: FigmaRestApi;
   } = {}) {
     this.#apiBaseAddress = apiBaseAddress;
+    this.#figmaRestApi = figmaRestApi;
 
     if (auth) {
       this.auth = auth;
@@ -338,14 +342,11 @@ export class Anima {
   ) {
     let design: GetFileResponse | undefined;
     try {
-      design = await getFigmaFile({
-        fileKey: params.fileKey,
-        authToken: params.figmaToken,
-        params: {
-          geometry: "paths",
-        },
-        signal,
-      });
+      design = await this.#figmaRestApi
+        .withOptions({ token: params.figmaToken, abortSignal: signal })
+        .getFile({
+          fileKey: params.fileKey,
+        });
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
         // The caller aborted the request, no need to fall through
@@ -375,6 +376,7 @@ export class Anima {
       fileKey: params.fileKey,
       figmaToken: params.figmaToken,
       nodesId: params.nodesId,
+      figmaRateLimitMaxWait: params.figmaRateLimitMaxWait,
       assetsStorage: params.assetsStorage,
       language: settings.language,
       model: settings.model,

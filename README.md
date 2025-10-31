@@ -16,7 +16,7 @@ We provide two packages for API integration: `anima-sdk` and `anima-sdk-react`.
 
 The `anima-sdk` package is designed for server-side use, while `anima-sdk-react` is optimized for React applications.
 
-For security best practices, we recommend running `anima-sdk` on your backend to keep your Anima token private. Create a middleware endpoint on your backend following this pattern:
+For security best practices, we recommend creating an `Anima` instance from `anima-sdk` on your backend to keep your Anima token private. Create a middleware endpoint on your backend following this pattern:
 
 ```mermaid
 sequenceDiagram
@@ -162,13 +162,141 @@ const { files } = await anima.generateCodeFromPrompt({
 console.log(files); // High-quality React code from your text description!
 ```
 
+### `FigmaRestApi`
+
+A utility class for retrieving data from Figma for code generation.
+
+#### Basic Usage
+
+```ts
+import { FigmaRestApi } from "@animaapp/anima-sdk";
+
+const figmaRestApi = new FigmaRestApi({
+  defaultOptions: { // Optional.
+    token: "Figma Token", // Figma token starting with `figd_` or `figu_`
+  },
+});
+
+const fileData = await figmaRestApi.getFile({
+  fileKey: "Design File Key",
+});
+```
+
+> :warning: If trying to set an invalid token (not starting with `figd_` or `figu_`), it'll throw an `InvalidFigmaToken` error.
+
+#### Options
+
+Available options:
+
+* `token`: Figma token starting with `figd_` or `figu_`. If not provided, the request will fail.
+* `abortSignal`: An `AbortSignal` to cancel the request.
+* `onRateLimited`: A callback function called when the request is rate-limited. It receives an object with `retryAfter` (seconds to wait), `figmaPlanTier`, and `figmaRateLimitType`. Return `true` to automatically retry the request, or `false` to throw a `RateLimitExceeded` error. If no function is provided, it will always throw `RateLimitExceeded`. If the function returns `true` and you want to abort while waiting, use the `abortSignal`. Learn more about [Figma's rate limiting](https://developers.figma.com/docs/rest-api/rate-limits).
+
+##### Overriding Options
+
+You can override the default options for the next request using `.withOptions` when calling any method:
+
+```ts
+const abortController = new AbortController();
+
+const fileData = await figmaRestApi
+  .withOptions({
+    token: "Another Figma Token",
+    signal: abortController.signal,
+    onRateLimited: ({ retryAfter }) => {
+      console.log('Rate limited!');
+      return retryAfter < 5; // Retry only if the wait time is less than 5 seconds
+    },
+  })
+  .getFile({
+    fileKey: "Design File Key",
+    nodesId: ["1:2", "1:4"],
+  });
+```
+
+#### Fetch Methods
+
+##### Get Figma File Data
+
+```ts
+const fileData = await figmaRestApi.getFile({
+  fileKey: "Design File Key",
+  nodesId: ["1:2", "1:4"], // Optional. If not provided, the entire file will be fetched.
+});
+```
+
+##### Get Node Images
+
+This method retrieves images from the specified nodes. Essentially, taking screenshots of the selected nodes.
+
+```ts
+const imageUrls = await figmaRestApi.getNodeImages({
+  fileKey: "Design File Key",
+  nodesId: ["1:2", "1:4"],
+  as: "arrayBuffer", // Optional
+  format: "jpg", // Optional
+  scale: 1, // Optional
+});
+```
+
+The `as` parameter defines the return format:
+
+* `arrayBuffer`: Downloads the image and returns an object with `ArrayBuffer` data.
+* `url`: Returns an object with URLs pointing to images hosted on Figma's servers.
+
+##### Get Image Fills
+
+This method retrieves URLs for image fills used in the design, hosted on Figma's servers.
+
+For example, if you have an image used as a fill inside a rectangle, this method will return the URL of that image.
+
+```ts
+const imagesFill = await figmaRestApi.getImageFills({
+  fileKey: "Design File Key",
+});
+```
+
+#### Testing
+
+You can use a custom `fetch` implementation for testing purposes:
+
+For example, if you want to test a rate-limit error when trying to access a specific file:
+
+```ts
+const figmaRestApi = new FigmaRestApi({
+  fetch: (url, ...args) => {
+    if (typeof url === 'string' && url.includes('xxxxxxxxxxxxxxxxxxxxxx')) {
+      return Promise.resolve(
+        new Response(JSON.stringify({ status: 429, err: 'Rate limit exceeded' }), {
+          status: 429,
+          headers: {
+            'Retry-After': '60',
+            'X-Figma-Plan-Tier': 'org',
+            'X-Figma-Rate-Limit-Type': 'low',
+            'X-Figma-Upgrade-Link': 'https://www.figma.com/files?api_paywall=true',
+          },
+        }),
+      );
+    }
+
+    return fetch(url, ...args);
+  },
+  defaultOptions: {
+    onRateLimited: ({ retryAfter }) => {
+      alert('Figma API rate limited.');
+      return false;
+    },
+  },
+});
+```
+
 ## `anima-sdk-react`
 
 ### Installing the Anima React SDK
 
-The Anima React SDK is hosted on NPM, so you can add it to your project with:
+The Anima React SDK is hosted on NPM and you need the base package as well to use it. So you can add both to your project with:
 
-```npm i @animaapp/anima-sdk-react```
+```npm i @animaapp/anima-sdk @animaapp/anima-sdk-react```
 
 ### Getting Started
 
@@ -176,6 +304,8 @@ The Anima React SDK is hosted on NPM, so you can add it to your project with:
 
 ```tsx
 <AnimaSdkProvider
+  {/* Read above how to create an instance of FigmaRestApi */}
+  figmaRestApi={figmaRestApi}
   f2cUrl="/api/anima/f2c"
   l2cUrl="/api/anima/l2c"
   p2cUrl="/api/anima/p2c"
@@ -210,7 +340,12 @@ The `settingsOptions` parameter is explained in the next section.
 const { job } = useAnimaSDK();
 ```
 
-**Note:** Human-readable progress messages are available in `job.progressMessages`, but avoid relying on specific string values for `title`, `subtitle`, or `body` in your application logic, as these may change. Use them only for user-facing displays.
+**Note 1:** Human-readable progress messages are available in `job.progressMessages`, but avoid relying on specific string values for `title`, `subtitle`, or `body` in your application logic, as these may change. Use them only for user-facing displays.
+
+**Note 2:** For testing the progress messages that hits the rate limit scenarios, we provide two mock designs:
+
+* **Short rate limit**: Use [this design](https://www.figma.com/design/Y1TdquDVUkEVetLzKOXAp8/Mock-Design---API---Short-Rate-Limit-Exceeded?node-id=1-5&t=QP3FD7yrFORTuqtS-11) to simulate a 10-second wait.
+* **Rate limit exceeded**: Use [this design](https://www.figma.com/design/AwhyxD3hSAcPDxedRjckbs/Mock-Design---API---Long-Rate-Limit-Exceeded?node-id=1-2&t=uLYu8I8kjW0KFPhh-11) to trigger a rate limit exceeded exception. It'll abort the code generation.
 
 ## Configuration Options
 
@@ -225,6 +360,7 @@ The following configuration options are available for customizing code generatio
 | `styling`                   | `"plain_css" \| "css_modules" \| "styled_components" \| "tailwind" \| "sass" \| "scss" \| "inline_styles"` <br><br> Note: only `tailwind` and `inline_styles` are currently available for websites and prompts. | The styling approach to use for the generated code.                                      |
 | `uiLibrary`                 | `"mui" \| "antd" \| "radix" \| "shadcn"` <br><br> Note: only `shadcn` is currently available for websites and prompts. You can also omit this option to use vanilla React.                                                                   | The UI component library to use (React only).                                            |
 | `responsivePages`           | `Array<{ name: string; framesId: string[] }>` <br><br> Note: only available for Figma designs.                                                              | When set, it overrides any responsive settings from the plugin.                          |
+| `figmaRateLimitMaxWait`        | `number` <br><br> Note: only available for Figma designs.                                                              | Maximum wait time in seconds for Figma rate limits to expire. Minimum is `1`, maximum is `180`. Defaults to `60`.                          |
 | `enableTranslation`         | `boolean` <br><br> Note: only available for Figma designs.                                                                                                  | Enable translation support (HTML only).                                                  |
 | `enableCompactStructure`    | `boolean` <br><br> Note: only available for Figma designs.                                                                                                  | Generate a more compact file structure.                                                  |
 | `enableAutoSplit`           | `boolean` <br><br> Note: only available for Figma designs.                                                                                                  | Automatically split components based on complexity.                                      |
@@ -307,6 +443,8 @@ Validates whether a Figma URL is compatible with code generation.
 
 The `useFigmaFile` hook retrieves data from Figma designs for exploration and node selection.
 
+> This hook can only be called only within `<AnimaSdkProvider />`.
+
 **Example usage:**
 
 ```tsx
@@ -314,9 +452,9 @@ import { useFigmaFile } from "@animaapp/anima-sdk-react";
 
 function FigmaNodeExplorer() {
   const { data, isLoading, error } = useFigmaFile({
-    fileKey: "your-figma-file-key",
-    authToken: "your-figma-token",
-    params: {
+    fileKey: "your-figma-file-key", // Required.
+    authToken: "your-figma-token", // Optional. By default, it'll use the Figma token provided by FigmaRestApi defined on `<AnimaSdkProvider />`
+    params: { // Optional.
       depth: 2, // Controls document tree traversal depth:
                 // depth: 1 - returns only pages
                 // depth: 2 - returns pages and top-level objects on each page
