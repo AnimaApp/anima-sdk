@@ -2,6 +2,7 @@ import type {
   GetFileResponse,
   GetImageFillsResponse,
   GetImagesResponse,
+  GetMeResponse,
 } from "@figma/rest-api-spec";
 import deepcopy from "deepcopy";
 import {
@@ -304,6 +305,12 @@ class FigmaRestApi {
     const url = `v1/files/${fileKey}/images`;
     const response = await this.#get<GetImageFillsResponse>(url);
     return response.meta?.images ?? {};
+  }
+
+  async getMe() {
+    const url = `v1/me`;
+    const response = await this.#get<GetMeResponse>(url);
+    return response;
   }
 }
 

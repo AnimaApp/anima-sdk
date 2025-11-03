@@ -734,4 +734,42 @@ describe("# FigmaRestApi", () => {
       });
     });
   });
+
+  describe(".getMe", () => {
+    it("returns the current user info", async () => {
+      // Arrange
+      const meResponseData = {
+        id: "1234567890",
+        handle: "testuser",
+        email: "example@animaapp.com",
+      };
+      const successResponse = new Response(JSON.stringify(meResponseData), {
+        status: 200,
+      });
+      const fetchMock = vi.fn().mockReturnValue(successResponse);
+
+      const figmaRestApi = new FigmaRestApi({
+        fetch: fetchMock,
+        defaultOptions: {
+          token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        },
+      });
+
+      // Act
+      const me = await figmaRestApi.getMe();
+
+      // Assert
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://api.figma.com/v1/me",
+        expect.objectContaining({
+          method: "GET",
+          headers: expect.objectContaining({
+            "X-FIGMA-TOKEN": "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          }),
+        })
+      );
+      expect(me).toStrictEqual(meResponseData);
+    });
+  });
 });

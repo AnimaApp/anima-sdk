@@ -8,4 +8,4 @@ export * from "./dataStream";
 export * from "./FigmaRestApi";
 
 // Re-export types from @figma/rest-api-spec that we return on FigmaRestApi methods
-export type { GetFileResponse } from "@figma/rest-api-spec";
+export type { GetFileResponse, GetMeResponse } from "@figma/rest-api-spec";

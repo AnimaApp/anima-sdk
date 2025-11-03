@@ -256,6 +256,12 @@ const imagesFill = await figmaRestApi.getImageFills({
 });
 ```
 
+##### Get Current User Info
+
+```ts
+const me = await figmaRestApi.getMe();
+```
+
 #### Testing
 
 You can use a custom `fetch` implementation for testing purposes:
