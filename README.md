@@ -214,7 +214,15 @@ const fileData = await figmaRestApi
   });
 ```
 
-#### Fetch Methods
+#### Methods
+
+##### Has default token
+
+Check if there is a default Figma token set.
+
+```ts
+const hasDefaultToken = figmaRestApi.hasDefaultToken(); // true | false
+```
 
 ##### Get Figma File Data
 

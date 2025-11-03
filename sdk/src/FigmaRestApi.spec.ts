@@ -53,6 +53,39 @@ describe("# FigmaRestApi", () => {
     });
   });
 
+  describe(".hasDefaultToken", () => {
+    describe("when a default token is set in the constructor", () => {
+      it("returns true", () => {
+        const figmaRestApi = new FigmaRestApi({
+          defaultOptions: {
+            token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          },
+        });
+
+        expect(figmaRestApi.hasDefaultToken()).toBe(true);
+      });
+    });
+
+    describe("when a default otken is set later", () => {
+      it("returns true", () => {
+        const figmaRestApi = new FigmaRestApi();
+
+        figmaRestApi.updateDefaultOptions({
+          token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        });
+
+        expect(figmaRestApi.hasDefaultToken()).toBe(true);
+      });
+    });
+
+    describe("when no default token is set", () => {
+      it("returns false", () => {
+        const figmaRestApi = new FigmaRestApi();
+        expect(figmaRestApi.hasDefaultToken()).toBe(false);
+      });
+    });
+  });
+
   describe(".updateDefaultOptions", () => {
     it("updates the default options", async () => {
       // Arrange

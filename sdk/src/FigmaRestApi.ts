@@ -60,6 +60,10 @@ class FigmaRestApi {
     }
   }
 
+  hasDefaultToken() {
+    return Boolean(this.#defaultOptions.token);
+  }
+
   updateDefaultOptions(options: Options) {
     if (options.token) {
       this.#ensureValidToken(options.token);
