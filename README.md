@@ -182,7 +182,7 @@ const fileData = await figmaRestApi.getFile({
 });
 ```
 
-> :warning: If trying to set an invalid token (not starting with `figd_` or `figu_`), it'll throw an `InvalidFigmaToken` error.
+> :warning: If trying to set an invalid token (not starting with `figd_` or `figu_`), it'll throw an `MalformattedFigmaToken` error.
 
 #### Options
 
@@ -190,6 +190,7 @@ Available options:
 
 * `token`: Figma token starting with `figd_` or `figu_`. If not provided, the request will fail.
 * `abortSignal`: An `AbortSignal` to cancel the request.
+* `onForbidden`: A callback function called when we have a 403 error. It receives an instance of `NeedsReauthFigmaToken`, `ExpiredFigmaToken`, or `UnknownForbiddenFigmaError`. The callback can return a promise that resolves to an object with a `retry` property containing a new token, or `void` to not retry and rethrow the error. If no function is provided, it just rethrows the error.
 * `onRateLimited`: A callback function called when the request is rate-limited. It receives an object with `retryAfter` (seconds to wait), `figmaPlanTier`, and `figmaRateLimitType`. Return `true` to automatically retry the request, or `false` to throw a `RateLimitExceeded` error. If no function is provided, it will always throw `RateLimitExceeded`. If the function returns `true` and you want to abort while waiting, use the `abortSignal`. Learn more about [Figma's rate limiting](https://developers.figma.com/docs/rest-api/rate-limits).
 
 ##### Overriding Options
@@ -203,6 +204,18 @@ const fileData = await figmaRestApi
   .withOptions({
     token: "Another Figma Token",
     signal: abortController.signal,
+    onForbidden: async (error) => {
+      if (error instanceof ExpiredFigmaToken) {
+        // Try to refresh the token
+        const newToken = await refreshFigmaToken();
+        return { retry: { newToken } };
+      } else if (error instanceof NeedsReauthFigmaToken) {
+        // Navigate to the Figma's page to authorize the app again
+        navigateToFigmaAppAuthorization();
+      } else {
+        // Unknown error, just rethrow
+      }
+    },
     onRateLimited: ({ retryAfter }) => {
       console.log('Rate limited!');
       return retryAfter < 5; // Retry only if the wait time is less than 5 seconds

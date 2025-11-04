@@ -5,6 +5,7 @@ import type {
 } from "@figma/rest-api-spec";
 import { FigmaRestApi } from "./FigmaRestApi";
 import design from "../tests/design/design";
+import { ExpiredFigmaToken } from "./errors";
 
 describe("# FigmaRestApi", () => {
   describe(".constructor", () => {
@@ -41,14 +42,502 @@ describe("# FigmaRestApi", () => {
     });
 
     describe("when the figma token is invalid", () => {
-      it("throws an InvalidFigmaAccessTokenError", () => {
+      it("throws an MalformattedFigmaToken", () => {
         expect(() => {
           new FigmaRestApi({
             defaultOptions: {
               token: "invalid_toke",
             },
           });
-        }).toThrowError("Invalid Figma Access Token");
+        }).toThrowError("Malformatted Figma Token");
+      });
+    });
+  });
+
+  describe("Options handling", () => {
+    describe(".onForbidden", () => {
+      describe("when the response is a 403 with 'Token expired' body", () => {
+        describe("and the onForbidden option is defined", () => {
+          describe("and it returns a new token", async () => {
+            describe("ands retries the request with the new token", () => {
+              it("returns the expected data in case of success", async () => {
+                // Arrange
+                const tokenIssueResponse = new Response(
+                  JSON.stringify({ status: 403, err: "Token expired" }),
+                  {
+                    status: 403,
+                  }
+                );
+                const successResponse = new Response(JSON.stringify(design), {
+                  status: 200,
+                });
+
+                const fetchMock = vi
+                  .fn()
+                  .mockReturnValueOnce(tokenIssueResponse)
+                  .mockReturnValueOnce(successResponse);
+
+                const figmaRestApi = new FigmaRestApi({
+                  fetch: fetchMock,
+                  defaultOptions: {
+                    token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                    async onForbidden(error) {
+                      if (error instanceof ExpiredFigmaToken) {
+                        return {
+                          retry: {
+                            newToken:
+                              "figd_newvalidtokenxxxxxxxxxxxxxxxxxxxxxxxxx",
+                          },
+                        };
+                      }
+                    },
+                  },
+                });
+
+                // Act
+                const fileData = await figmaRestApi.getFile({
+                  fileKey: "dummyFileKeyxxxxxxxxxx",
+                  nodeIds: ["1:2", "1:4"],
+                });
+
+                // Assert
+                expect(fetchMock).toHaveBeenCalledTimes(2);
+                expect(fetchMock).toHaveBeenNthCalledWith(
+                  1,
+                  "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
+                  expect.objectContaining({
+                    method: "GET",
+                    headers: expect.objectContaining({
+                      "X-FIGMA-TOKEN":
+                        "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                    }),
+                  })
+                );
+                expect(fetchMock).toHaveBeenNthCalledWith(
+                  2,
+                  "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
+                  expect.objectContaining({
+                    method: "GET",
+                    headers: expect.objectContaining({
+                      "X-FIGMA-TOKEN":
+                        "figd_newvalidtokenxxxxxxxxxxxxxxxxxxxxxxxxx",
+                    }),
+                  })
+                );
+                expect(fileData).toBeDefined();
+                expect(fileData.name).toBe("Anima SDK - Test File");
+              });
+
+              it("throws an error in case the new token is still expired", async () => {
+                // Arrange
+                const firstTokenIssueResponse = new Response(
+                  JSON.stringify({ status: 403, err: "Token expired" }),
+                  {
+                    status: 403,
+                  }
+                );
+                const secondTokenIssueResponse = new Response(
+                  JSON.stringify({ status: 403, err: "Token expired" }),
+                  {
+                    status: 403,
+                  }
+                );
+                const fetchMock = vi
+                  .fn()
+                  .mockReturnValueOnce(firstTokenIssueResponse)
+                  .mockReturnValueOnce(secondTokenIssueResponse);
+                const figmaRestApi = new FigmaRestApi({
+                  fetch: fetchMock,
+                  defaultOptions: {
+                    token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                    async onForbidden(error) {
+                      if (error instanceof ExpiredFigmaToken) {
+                        return {
+                          retry: {
+                            newToken:
+                              "figd_anotherinvalidtokenxxxxxxxxxxxxxxxxxxxx",
+                          },
+                        };
+                      }
+                    },
+                  },
+                });
+
+                // Act & Assert
+                await expect(
+                  figmaRestApi.getFile({
+                    fileKey: "dummyFileKeyxxxxxxxxxx",
+                    nodeIds: ["1:2", "1:4"],
+                  })
+                ).rejects.toThrowError("Expired Figma Token");
+                expect(fetchMock).toHaveBeenCalledTimes(2);
+                expect(fetchMock).toHaveBeenNthCalledWith(
+                  1,
+                  "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
+                  expect.objectContaining({
+                    method: "GET",
+                    headers: expect.objectContaining({
+                      "X-FIGMA-TOKEN":
+                        "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                    }),
+                  })
+                );
+                expect(fetchMock).toHaveBeenNthCalledWith(
+                  2,
+                  "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
+                  expect.objectContaining({
+                    method: "GET",
+                    headers: expect.objectContaining({
+                      "X-FIGMA-TOKEN":
+                        "figd_anotherinvalidtokenxxxxxxxxxxxxxxxxxxxx",
+                    }),
+                  })
+                );
+              });
+            });
+          });
+
+          describe("but it returns nothing", () => {
+            it("throws the ExpiredFigmaToken error", async () => {
+              // Arrange
+              const tokenIssueResponse = new Response(
+                JSON.stringify({ status: 403, err: "Token expired" }),
+                {
+                  status: 403,
+                }
+              );
+              const fetchMock = vi.fn().mockReturnValueOnce(tokenIssueResponse);
+              const figmaRestApi = new FigmaRestApi({
+                fetch: fetchMock,
+                defaultOptions: {
+                  token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  async onForbidden() {
+                    return;
+                  },
+                },
+              });
+
+              // Act & Assert
+              await expect(
+                figmaRestApi.getFile({
+                  fileKey: "dummyFileKeyxxxxxxxxxx",
+                  nodeIds: ["1:2", "1:4"],
+                })
+              ).rejects.toThrowError("Expired Figma Token");
+              expect(fetchMock).toHaveBeenCalledTimes(1);
+              expect(fetchMock).toHaveBeenNthCalledWith(
+                1,
+                "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
+                expect.objectContaining({
+                  method: "GET",
+                  headers: expect.objectContaining({
+                    "X-FIGMA-TOKEN":
+                      "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  }),
+                })
+              );
+            });
+          });
+        });
+
+        describe("and the onForbidden option is not defined", () => {
+          it("throws the ExpiredFigmaToken error immediately", async () => {
+            // Arrange
+            const tokenIssueResponse = new Response(
+              JSON.stringify({ status: 403, err: "Token expired" }),
+              {
+                status: 403,
+              }
+            );
+            const fetchMock = vi.fn().mockReturnValueOnce(tokenIssueResponse);
+            const figmaRestApi = new FigmaRestApi({
+              fetch: fetchMock,
+              defaultOptions: {
+                token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+              },
+            });
+
+            // Act & Assert
+            await expect(
+              figmaRestApi.getFile({
+                fileKey: "dummyFileKeyxxxxxxxxxx",
+                nodeIds: ["1:2", "1:4"],
+              })
+            ).rejects.toThrowError("Expired Figma Token");
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+            expect(fetchMock).toHaveBeenNthCalledWith(
+              1,
+              "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
+              expect.objectContaining({
+                method: "GET",
+                headers: expect.objectContaining({
+                  "X-FIGMA-TOKEN":
+                    "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                }),
+              })
+            );
+          });
+        });
+      });
+
+      describe(".onRateLimited", () => {
+        describe("when the response is a 429", () => {
+          describe("and the onRateLimited option is defined", () => {
+            describe("and it returns true", () => {
+              it("retries after the time", async () => {
+                // Arrange
+                vi.useFakeTimers();
+
+                const rateLimitResponse = new Response(
+                  JSON.stringify({ status: 429, err: "Rate limit exceeded" }),
+                  {
+                    status: 429,
+                    headers: {
+                      "Retry-After": "60",
+                      "X-Figma-Plan-Tier": "org",
+                      "X-Figma-Rate-Limit-Type": "low",
+                      "X-Figma-Upgrade-Link":
+                        "https://www.figma.com/files?api_paywall=true",
+                    },
+                  }
+                );
+                const successResponse = new Response(JSON.stringify(design), {
+                  status: 200,
+                });
+                const fetchMock = vi
+                  .fn()
+                  .mockReturnValueOnce(rateLimitResponse)
+                  .mockReturnValueOnce(successResponse);
+
+                const figmaRestApi = new FigmaRestApi({
+                  fetch: fetchMock,
+                  defaultOptions: {
+                    token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  },
+                });
+
+                // Act
+                let receivedRetryAfter: number | undefined;
+                const fileDataPromise = figmaRestApi
+                  .withOptions({
+                    async onRateLimited({ retryAfter }) {
+                      receivedRetryAfter = retryAfter;
+                      return true;
+                    },
+                  })
+                  .getFile({
+                    fileKey: "dummyFileKeyxxxxxxxxxx",
+                    nodeIds: ["1:2", "1:4"],
+                  });
+
+                await vi.advanceTimersByTimeAsync(61_000);
+
+                const fileData = await fileDataPromise;
+
+                // Assert
+                expect(receivedRetryAfter).toBe(60);
+                expect(fetchMock).toHaveBeenCalledTimes(2);
+                expect(fetchMock).toHaveBeenCalledWith(
+                  "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
+                  expect.objectContaining({
+                    method: "GET",
+                    headers: expect.objectContaining({
+                      "X-FIGMA-TOKEN":
+                        "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                    }),
+                  })
+                );
+                expect(fileData).toBeDefined();
+                expect(fileData.name).toBe("Anima SDK - Test File");
+
+                // Cleanup
+                vi.useRealTimers();
+              });
+
+              describe("but received an abort signal while waiting", () => {
+                it('throws an "AbortError" error', async () => {
+                  // Arrange
+                  vi.useFakeTimers();
+
+                  const rateLimitResponse = new Response(
+                    JSON.stringify({ status: 429, err: "Rate limit exceeded" }),
+                    {
+                      status: 429,
+                      headers: {
+                        "Retry-After": "60",
+                        "X-Figma-Plan-Tier": "org",
+                        "X-Figma-Rate-Limit-Type": "low",
+                        "X-Figma-Upgrade-Link":
+                          "https://www.figma.com/files?api_paywall=true",
+                      },
+                    }
+                  );
+                  const fetchMock = vi
+                    .fn()
+                    .mockReturnValueOnce(rateLimitResponse);
+
+                  const figmaRestApi = new FigmaRestApi({
+                    fetch: fetchMock,
+                    defaultOptions: {
+                      token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                    },
+                  });
+
+                  const abortController = new AbortController();
+
+                  // Act
+                  const fileDataPromise = figmaRestApi
+                    .withOptions({
+                      abortSignal: abortController.signal,
+                      async onRateLimited() {
+                        return true;
+                      },
+                    })
+                    .getFile({
+                      fileKey: "dummyFileKeyxxxxxxxxxx",
+                      nodeIds: ["1:2", "1:4"],
+                    });
+
+                  await vi.advanceTimersByTimeAsync(20_000);
+
+                  abortController.abort();
+
+                  // Assert
+                  await expect(fileDataPromise).rejects.toThrowError(
+                    "The operation was aborted."
+                  );
+                  expect(fetchMock).toHaveBeenCalledTimes(1);
+                  expect(fetchMock).toHaveBeenCalledWith(
+                    "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
+                    expect.objectContaining({
+                      method: "GET",
+                      headers: expect.objectContaining({
+                        "X-FIGMA-TOKEN":
+                          "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                      }),
+                    })
+                  );
+
+                  await vi.advanceTimersByTimeAsync(60_000);
+
+                  expect(fetchMock).toHaveBeenCalledTimes(1);
+
+                  // Cleanup
+                  vi.useRealTimers();
+                });
+              });
+            });
+
+            describe("and it returns false", () => {
+              it("throws a RateLimitExceeded error", async () => {
+                // Arrange
+                vi.useFakeTimers();
+
+                const rateLimitResponse = new Response(
+                  JSON.stringify({ status: 429, err: "Rate limit exceeded" }),
+                  {
+                    status: 429,
+                    headers: {
+                      "Retry-After": "3600",
+                      "X-Figma-Plan-Tier": "org",
+                      "X-Figma-Rate-Limit-Type": "low",
+                      "X-Figma-Upgrade-Link":
+                        "https://www.figma.com/files?api_paywall=true",
+                    },
+                  }
+                );
+                const fetchMock = vi
+                  .fn()
+                  .mockReturnValueOnce(rateLimitResponse);
+
+                const figmaRestApi = new FigmaRestApi({
+                  fetch: fetchMock,
+                  defaultOptions: {
+                    token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  },
+                });
+
+                // Act & Assert
+                let receivedRetryAfter: number | undefined;
+                await expect(
+                  figmaRestApi
+                    .withOptions({
+                      async onRateLimited({ retryAfter }) {
+                        receivedRetryAfter = retryAfter;
+                        return false;
+                      },
+                    })
+                    .getFile({
+                      fileKey: "dummyFileKeyxxxxxxxxxx",
+                      nodeIds: ["1:2", "1:4"],
+                    })
+                ).rejects.toThrowError("Rate Limit Exceeded");
+
+                expect(receivedRetryAfter).toBe(3600);
+                expect(fetchMock).toHaveBeenCalledTimes(1);
+                expect(fetchMock).toHaveBeenCalledWith(
+                  "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
+                  expect.objectContaining({
+                    method: "GET",
+                    headers: expect.objectContaining({
+                      "X-FIGMA-TOKEN":
+                        "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                    }),
+                  })
+                );
+              });
+            });
+          });
+
+          describe("and the onRateLimited option is not defined", () => {
+            it("throws a RateLimitExceeded error immediately", async () => {
+              // Arrange
+              vi.useFakeTimers();
+
+              const rateLimitResponse = new Response(
+                JSON.stringify({ status: 429, err: "Rate limit exceeded" }),
+                {
+                  status: 429,
+                  headers: {
+                    "Retry-After": "3600",
+                    "X-Figma-Plan-Tier": "org",
+                    "X-Figma-Rate-Limit-Type": "low",
+                    "X-Figma-Upgrade-Link":
+                      "https://www.figma.com/files?api_paywall=true",
+                  },
+                }
+              );
+              const fetchMock = vi.fn().mockReturnValueOnce(rateLimitResponse);
+
+              const figmaRestApi = new FigmaRestApi({
+                fetch: fetchMock,
+                defaultOptions: {
+                  token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                },
+              });
+
+              // Act & Assert
+              await expect(
+                figmaRestApi.getFile({
+                  fileKey: "dummyFileKeyxxxxxxxxxx",
+                  nodeIds: ["1:2", "1:4"],
+                })
+              ).rejects.toThrowError("Rate Limit Exceeded");
+
+              expect(fetchMock).toHaveBeenCalledTimes(1);
+              expect(fetchMock).toHaveBeenCalledWith(
+                "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
+                expect.objectContaining({
+                  method: "GET",
+                  headers: expect.objectContaining({
+                    "X-FIGMA-TOKEN":
+                      "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  }),
+                })
+              );
+            });
+          });
+        });
       });
     });
   });
@@ -245,318 +734,58 @@ describe("# FigmaRestApi", () => {
   });
 
   describe(".getFile", () => {
-    describe("when successful", () => {
-      it("is called with the expected parameters and returns the file data", async () => {
-        // Arrange
-        const successResponse = new Response(JSON.stringify(design), {
-          status: 200,
-        });
-        const fetchMock = vi.fn().mockReturnValue(successResponse);
-
-        const figmaRestApi = new FigmaRestApi({
-          fetch: fetchMock,
-          defaultOptions: {
-            token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-          },
-        });
-
-        // Act
-        const fileData = await figmaRestApi.getFile({
-          fileKey: "dummyFileKeyxxxxxxxxxx",
-          nodeIds: ["1:2", "1:4"],
-        });
-
-        // Assert
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(fetchMock).toHaveBeenCalledWith(
-          "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
-          expect.objectContaining({
-            method: "GET",
-            headers: expect.objectContaining({
-              "X-FIGMA-TOKEN": "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            }),
-          })
-        );
-        expect(fileData).toBeDefined();
-        expect(fileData.name).toBe("Anima SDK - Test File");
+    it("is called with the expected parameters and returns the file data", async () => {
+      // Arrange
+      const successResponse = new Response(JSON.stringify(design), {
+        status: 200,
       });
+      const fetchMock = vi.fn().mockReturnValue(successResponse);
+
+      const figmaRestApi = new FigmaRestApi({
+        fetch: fetchMock,
+        defaultOptions: {
+          token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        },
+      });
+
+      // Act
+      const fileData = await figmaRestApi.getFile({
+        fileKey: "dummyFileKeyxxxxxxxxxx",
+        nodeIds: ["1:2", "1:4"],
+      });
+
+      // Assert
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
+        expect.objectContaining({
+          method: "GET",
+          headers: expect.objectContaining({
+            "X-FIGMA-TOKEN": "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          }),
+        })
+      );
+      expect(fileData).toBeDefined();
+      expect(fileData.name).toBe("Anima SDK - Test File");
     });
 
-    describe("when failed", () => {
-      describe("when no Figma token is provided", () => {
-        it("throws a MissingFigmaToken error", async () => {
-          // Arrange
-          const fetchMock = vi.fn();
-          const figmaRestApi = new FigmaRestApi({
-            fetch: fetchMock,
-          });
-
-          // Act & Assert
-          await expect(
-            figmaRestApi.getFile({
-              fileKey: "dummyFileKeyxxxxxxxxxx",
-              nodeIds: ["1:2", "1:4"],
-            })
-          ).rejects.toThrowError("Missing Figma Token");
-
-          expect(fetchMock).toHaveBeenCalledTimes(0);
-        });
-      });
-
-      describe("when the response is a 429", () => {
-        describe("and the onRateLimited option is defined", () => {
-          describe("and it returns true", () => {
-            it("retries after the time", async () => {
-              // Arrange
-              vi.useFakeTimers();
-
-              const rateLimitResponse = new Response(
-                JSON.stringify({ status: 429, err: "Rate limit exceeded" }),
-                {
-                  status: 429,
-                  headers: {
-                    "Retry-After": "60",
-                    "X-Figma-Plan-Tier": "org",
-                    "X-Figma-Rate-Limit-Type": "low",
-                    "X-Figma-Upgrade-Link":
-                      "https://www.figma.com/files?api_paywall=true",
-                  },
-                }
-              );
-              const successResponse = new Response(JSON.stringify(design), {
-                status: 200,
-              });
-              const fetchMock = vi
-                .fn()
-                .mockReturnValueOnce(rateLimitResponse)
-                .mockReturnValueOnce(successResponse);
-
-              const figmaRestApi = new FigmaRestApi({
-                fetch: fetchMock,
-                defaultOptions: {
-                  token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-                },
-              });
-
-              // Act
-              let receivedRetryAfter: number | undefined;
-              const fileDataPromise = figmaRestApi
-                .withOptions({
-                  async onRateLimited({ retryAfter }) {
-                    receivedRetryAfter = retryAfter;
-                    return true;
-                  },
-                })
-                .getFile({
-                  fileKey: "dummyFileKeyxxxxxxxxxx",
-                  nodeIds: ["1:2", "1:4"],
-                });
-
-              await vi.advanceTimersByTimeAsync(61_000);
-
-              const fileData = await fileDataPromise;
-
-              // Assert
-              expect(receivedRetryAfter).toBe(60);
-              expect(fetchMock).toHaveBeenCalledTimes(2);
-              expect(fetchMock).toHaveBeenCalledWith(
-                "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
-                expect.objectContaining({
-                  method: "GET",
-                  headers: expect.objectContaining({
-                    "X-FIGMA-TOKEN":
-                      "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-                  }),
-                })
-              );
-              expect(fileData).toBeDefined();
-              expect(fileData.name).toBe("Anima SDK - Test File");
-
-              // Cleanup
-              vi.useRealTimers();
-            });
-
-            describe("but received an abort signal while waiting", () => {
-              it('throws an "AbortError" error', async () => {
-                // Arrange
-                vi.useFakeTimers();
-
-                const rateLimitResponse = new Response(
-                  JSON.stringify({ status: 429, err: "Rate limit exceeded" }),
-                  {
-                    status: 429,
-                    headers: {
-                      "Retry-After": "60",
-                      "X-Figma-Plan-Tier": "org",
-                      "X-Figma-Rate-Limit-Type": "low",
-                      "X-Figma-Upgrade-Link":
-                        "https://www.figma.com/files?api_paywall=true",
-                    },
-                  }
-                );
-                const fetchMock = vi
-                  .fn()
-                  .mockReturnValueOnce(rateLimitResponse);
-
-                const figmaRestApi = new FigmaRestApi({
-                  fetch: fetchMock,
-                  defaultOptions: {
-                    token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-                  },
-                });
-
-                const abortController = new AbortController();
-
-                // Act
-                const fileDataPromise = figmaRestApi
-                  .withOptions({
-                    abortSignal: abortController.signal,
-                    async onRateLimited() {
-                      return true;
-                    },
-                  })
-                  .getFile({
-                    fileKey: "dummyFileKeyxxxxxxxxxx",
-                    nodeIds: ["1:2", "1:4"],
-                  });
-
-                await vi.advanceTimersByTimeAsync(20_000);
-
-                abortController.abort();
-
-                // Assert
-                await expect(fileDataPromise).rejects.toThrowError(
-                  "The operation was aborted."
-                );
-                expect(fetchMock).toHaveBeenCalledTimes(1);
-                expect(fetchMock).toHaveBeenCalledWith(
-                  "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
-                  expect.objectContaining({
-                    method: "GET",
-                    headers: expect.objectContaining({
-                      "X-FIGMA-TOKEN":
-                        "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-                    }),
-                  })
-                );
-
-                await vi.advanceTimersByTimeAsync(60_000);
-
-                expect(fetchMock).toHaveBeenCalledTimes(1);
-
-                // Cleanup
-                vi.useRealTimers();
-              });
-            });
-          });
-
-          describe("and it returns false", () => {
-            it("throws a RateLimitExceeded error", async () => {
-              // Arrange
-              vi.useFakeTimers();
-
-              const rateLimitResponse = new Response(
-                JSON.stringify({ status: 429, err: "Rate limit exceeded" }),
-                {
-                  status: 429,
-                  headers: {
-                    "Retry-After": "3600",
-                    "X-Figma-Plan-Tier": "org",
-                    "X-Figma-Rate-Limit-Type": "low",
-                    "X-Figma-Upgrade-Link":
-                      "https://www.figma.com/files?api_paywall=true",
-                  },
-                }
-              );
-              const fetchMock = vi.fn().mockReturnValueOnce(rateLimitResponse);
-
-              const figmaRestApi = new FigmaRestApi({
-                fetch: fetchMock,
-                defaultOptions: {
-                  token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-                },
-              });
-
-              // Act & Assert
-              let receivedRetryAfter: number | undefined;
-              await expect(
-                figmaRestApi
-                  .withOptions({
-                    async onRateLimited({ retryAfter }) {
-                      receivedRetryAfter = retryAfter;
-                      return false;
-                    },
-                  })
-                  .getFile({
-                    fileKey: "dummyFileKeyxxxxxxxxxx",
-                    nodeIds: ["1:2", "1:4"],
-                  })
-              ).rejects.toThrowError("Rate Limit Exceeded");
-
-              expect(receivedRetryAfter).toBe(3600);
-              expect(fetchMock).toHaveBeenCalledTimes(1);
-              expect(fetchMock).toHaveBeenCalledWith(
-                "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
-                expect.objectContaining({
-                  method: "GET",
-                  headers: expect.objectContaining({
-                    "X-FIGMA-TOKEN":
-                      "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-                  }),
-                })
-              );
-            });
-          });
+    describe("when no Figma token is provided", () => {
+      it("throws a MissingFigmaToken error", async () => {
+        // Arrange
+        const fetchMock = vi.fn();
+        const figmaRestApi = new FigmaRestApi({
+          fetch: fetchMock,
         });
 
-        describe("and the onRateLimited option is not defined", () => {
-          it("throws a RateLimitExceeded error immediately", async () => {
-            // Arrange
-            vi.useFakeTimers();
+        // Act & Assert
+        await expect(
+          figmaRestApi.getFile({
+            fileKey: "dummyFileKeyxxxxxxxxxx",
+            nodeIds: ["1:2", "1:4"],
+          })
+        ).rejects.toThrowError("Missing Figma Token");
 
-            const rateLimitResponse = new Response(
-              JSON.stringify({ status: 429, err: "Rate limit exceeded" }),
-              {
-                status: 429,
-                headers: {
-                  "Retry-After": "3600",
-                  "X-Figma-Plan-Tier": "org",
-                  "X-Figma-Rate-Limit-Type": "low",
-                  "X-Figma-Upgrade-Link":
-                    "https://www.figma.com/files?api_paywall=true",
-                },
-              }
-            );
-            const fetchMock = vi.fn().mockReturnValueOnce(rateLimitResponse);
-
-            const figmaRestApi = new FigmaRestApi({
-              fetch: fetchMock,
-              defaultOptions: {
-                token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-              },
-            });
-
-            // Act & Assert
-            await expect(
-              figmaRestApi.getFile({
-                fileKey: "dummyFileKeyxxxxxxxxxx",
-                nodeIds: ["1:2", "1:4"],
-              })
-            ).rejects.toThrowError("Rate Limit Exceeded");
-
-            expect(fetchMock).toHaveBeenCalledTimes(1);
-            expect(fetchMock).toHaveBeenCalledWith(
-              "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
-              expect.objectContaining({
-                method: "GET",
-                headers: expect.objectContaining({
-                  "X-FIGMA-TOKEN":
-                    "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-                }),
-              })
-            );
-          });
-        });
+        expect(fetchMock).toHaveBeenCalledTimes(0);
       });
     });
   });
@@ -684,7 +913,7 @@ describe("# FigmaRestApi", () => {
       it("throws the wrapped Figma API error", async () => {
         // Arrange
         const errorResponse = new Response(
-          JSON.stringify({ status: 403, err: "Forbidden" }),
+          JSON.stringify({ status: 403, err: "Token expired" }),
           {
             status: 403,
           }
@@ -704,7 +933,7 @@ describe("# FigmaRestApi", () => {
             fileKey: "dummyFileKeyxxxxxxxxxx",
             nodeIds: ["1:2", "1:3"],
           })
-        ).rejects.toThrowError("Token Issue");
+        ).rejects.toThrowError("Expired Figma Token");
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
         expect(fetchMock).toHaveBeenCalledWith(
