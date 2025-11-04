@@ -91,9 +91,9 @@ export class CodegenError extends Error {
  * Figma REST API Errors
  */
 
-export class InvalidFigmaAccessTokenError extends Error {
+export class MalformattedFigmaToken extends Error {
   constructor() {
-    super("Invalid Figma Access Token");
+    super("Malformatted Figma Token");
   }
 }
 
@@ -103,16 +103,27 @@ export class MissingFigmaToken extends Error {
   }
 }
 
-const figmaTokenIssueErrorMessage = "Figma Token Issue";
-export class FigmaTokenIssue extends Error {
-  constructor({ cause }: { cause?: unknown }) {
-    super(figmaTokenIssueErrorMessage);
-    this.cause = cause;
+export class NeedsReauthFigmaToken extends Error {
+  constructor() {
+    super("Needs Reauth Figma Token");
   }
 }
-export const isFigmaTokenIssue = (error: Error) => {
-  return error.message === figmaTokenIssueErrorMessage;
-};
+
+export class ExpiredFigmaToken extends Error {
+  constructor() {
+    super("Expired Figma Token");
+  }
+}
+
+export class UnknownForbiddenFigmaError extends Error {
+  reason: string | null;
+
+  constructor({ reason }: { reason: string | null }) {
+    super("Unknown Forbidden Figma Error");
+
+    this.reason = reason;
+  }
+}
 
 const notFoundErrorMessage = "Not Found";
 export class NotFound extends Error {

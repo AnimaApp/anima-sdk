@@ -6,9 +6,11 @@ import type {
 } from "@figma/rest-api-spec";
 import deepcopy from "deepcopy";
 import {
-  FigmaTokenIssue,
-  InvalidFigmaAccessTokenError,
+  MalformattedFigmaToken,
   MissingFigmaToken,
+  NeedsReauthFigmaToken,
+  ExpiredFigmaToken,
+  UnknownForbiddenFigmaError,
   NotFound,
   RateLimitExceeded,
   RequestTooLarge,
@@ -32,6 +34,12 @@ export type FigmaRateLimitType = "low" | "high";
 export type Options = {
   token?: string;
   abortSignal?: AbortSignal;
+  onForbidden?: (
+    error:
+      | NeedsReauthFigmaToken
+      | ExpiredFigmaToken
+      | UnknownForbiddenFigmaError
+  ) => Promise<{ retry: { newToken: string } } | void>;
   onRateLimited?: (headers: {
     retryAfter: number;
     figmaPlanTier: FigmaPlanTier;
@@ -88,7 +96,7 @@ class FigmaRestApi {
 
   #ensureValidToken(token: string) {
     if (!token.startsWith("figd_") && !token.startsWith("figu_")) {
-      throw new InvalidFigmaAccessTokenError();
+      throw new MalformattedFigmaToken();
     }
   }
 
@@ -125,9 +133,13 @@ class FigmaRestApi {
       }
 
       if (status === 403) {
-        throw new FigmaTokenIssue({
-          cause: response,
-        });
+        if (responseText?.includes("Invalid token")) {
+          throw new NeedsReauthFigmaToken();
+        } else if (responseText?.includes("Token expired")) {
+          throw new ExpiredFigmaToken();
+        }
+
+        throw new UnknownForbiddenFigmaError({ reason: responseText });
       } else if (status === 404) {
         throw new NotFound({ cause: response });
       } else if (status === 429) {
@@ -200,10 +212,32 @@ class FigmaRestApi {
       return response;
     };
 
-    const response = await this.#doRequest(nextOptions, request);
+    try {
+      const response = await this.#doRequest(nextOptions, request);
 
-    const responseData = (await response.json()) as T;
-    return responseData;
+      const responseData = (await response.json()) as T;
+      return responseData;
+    } catch (error) {
+      if (
+        nextOptions.onForbidden &&
+        (error instanceof NeedsReauthFigmaToken ||
+          error instanceof ExpiredFigmaToken ||
+          error instanceof UnknownForbiddenFigmaError)
+      ) {
+        const shouldRetry = await nextOptions.onForbidden(error);
+
+        if (shouldRetry) {
+          nextOptions.token = shouldRetry.retry.newToken;
+
+          const response = await this.#doRequest(nextOptions, request);
+          const responseData = (await response.json()) as T;
+
+          return responseData;
+        }
+      }
+
+      throw error;
+    }
   }
 
   async getFile({
