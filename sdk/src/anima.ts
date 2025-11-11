@@ -399,6 +399,8 @@ export class Anima {
       webhookUrl: params.webhookUrl,
       prompt: params.prompt,
       images: params.images,
+      // @ts-expect-error: We don't need to expose this parameter to GetCodeParams
+      createSession: params.createSession,
     };
 
     return this.#processGenerationRequest<SSECodegenMessage>(
