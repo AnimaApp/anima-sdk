@@ -508,6 +508,14 @@ function FigmaNodeExplorer() {
   );
 }
 ```
+## Figma OAuth recommended scopes
+In order to support the full requirements, use these scopes for your Figma OAuth application:
+- ```file_content:read```
+- ```file_metadata:read```
+- ```library_assets:read```
+- ```library_content:read```
+- ```team_library_content:read```
+- Optionally, you can also request ```current_user:read``` if you need the user's info and plan to use ```figmaRestApi.getMe()``` API.
 
 ## Contributing
 
