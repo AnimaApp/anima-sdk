@@ -425,7 +425,13 @@ export class Anima {
     }
 
     let input;
-    if (params.mhtml) {
+    if (params.mhtmlUrl) {
+      input = {
+        type: "hosted-mhtml",
+        mhtmlUrl: params.mhtmlUrl,
+        url: params.url,
+      };
+    } else if (params.mhtml) {
       input = {
         type: "mhtml",
         mhtml: params.mhtml,
@@ -437,7 +443,7 @@ export class Anima {
         url: params.url,
       };
     } else {
-      throw new Error("Either 'url' or 'mhtml' must be provided");
+      throw new Error("Either 'url', 'mhtml' or 'mhtmlUrl' must be provided");
     }
 
     let engine: "react-v2" | undefined = undefined;
