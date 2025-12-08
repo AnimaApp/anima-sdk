@@ -99,6 +99,7 @@ export type GeneratingCodePayload = {
 export type GetCodeFromWebsiteParams = {
   url?: string;
   mhtml?: string;
+  mhtmlUrl?: string;
 
   assetsStorage?: AssetsStorage;
   settings: GetCodeFromWebsiteSettings;
