@@ -190,7 +190,7 @@ Available options:
 
 * `token`: Figma token starting with `figd_` or `figu_`. If not provided, the request will fail.
 * `abortSignal`: An `AbortSignal` to cancel the request.
-* `onForbidden`: A callback function called when we have a 403 error. It receives an instance of `NeedsReauthFigmaToken`, `ExpiredFigmaToken`, or `UnknownForbiddenFigmaError`. The callback can return a promise that resolves to an object with a `retry` property containing a new token, or `void` to not retry and rethrow the error. If no function is provided, it just rethrows the error.
+* `onForbidden`: A callback function called when we have a 403 error. It receives an instance of `NeedsReauthFigmaToken`, `ExpiredFigmaToken`, `FileNotExportable`, or `UnknownForbiddenFigmaError`. The callback can return a promise that resolves to an object with a `retry` property containing a new token, or `void` to not retry and rethrow the error. If no function is provided, it just rethrows the error.
 * `onRateLimited`: A callback function called when the request is rate-limited. It receives an object with `retryAfter` (seconds to wait), `figmaPlanTier`, and `figmaRateLimitType`. Return `true` to automatically retry the request, or `false` to throw a `RateLimitExceeded` error. If no function is provided, it will always throw `RateLimitExceeded`. If the function returns `true` and you want to abort while waiting, use the `abortSignal`. Learn more about [Figma's rate limiting](https://developers.figma.com/docs/rest-api/rate-limits).
 
 ##### Overriding Options
@@ -212,6 +212,9 @@ const fileData = await figmaRestApi
       } else if (error instanceof NeedsReauthFigmaToken) {
         // Navigate to the Figma's page to authorize the app again
         navigateToFigmaAppAuthorization();
+      } else if (error instanceof FileNotExportable) {
+        // Notify the user that the file cannot be exported
+        alert("The requested Figma file is not exportable. Please check the file permissions.");
       } else {
         // Unknown error, just rethrow
       }
@@ -508,14 +511,17 @@ function FigmaNodeExplorer() {
   );
 }
 ```
+
 ## Figma OAuth recommended scopes
+
 In order to support the full requirements, use these scopes for your Figma OAuth application:
-- ```file_content:read```
-- ```file_metadata:read```
-- ```library_assets:read```
-- ```library_content:read```
-- ```team_library_content:read```
-- Optionally, you can also request ```current_user:read``` if you need the user's info and plan to use ```figmaRestApi.getMe()``` API.
+
+* ```file_content:read```
+* ```file_metadata:read```
+* ```library_assets:read```
+* ```library_content:read```
+* ```team_library_content:read```
+* Optionally, you can also request ```current_user:read``` if you need the user's info and plan to use ```figmaRestApi.getMe()``` API.
 
 ## Contributing
 
