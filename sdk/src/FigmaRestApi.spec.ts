@@ -5,7 +5,7 @@ import type {
 } from "@figma/rest-api-spec";
 import { FigmaRestApi } from "./FigmaRestApi";
 import design from "../tests/design/design";
-import { ExpiredFigmaToken } from "./errors";
+import { ExpiredFigmaToken, FileNotExportable } from "./errors";
 
 describe("# FigmaRestApi", () => {
   describe(".constructor", () => {
@@ -264,6 +264,88 @@ describe("# FigmaRestApi", () => {
                 nodeIds: ["1:2", "1:4"],
               })
             ).rejects.toThrowError("Expired Figma Token");
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+            expect(fetchMock).toHaveBeenNthCalledWith(
+              1,
+              "https://api.figma.com/v1/files/dummyFileKeyxxxxxxxxxx?plugin_data=857346721138427857&geometry=paths&ids=1%3A2%2C1%3A4",
+              expect.objectContaining({
+                method: "GET",
+                headers: expect.objectContaining({
+                  "X-FIGMA-TOKEN":
+                    "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                }),
+              })
+            );
+          });
+        });
+      });
+
+      describe("when the response is a 403 with 'File not exportable' body", () => {
+        describe("and the onForbidden option is defined", () => {
+          it("calls onForbidden with the FileNotExportable error", async () => {
+            // Arrange
+            const fileNotExportableResponse = new Response(
+              JSON.stringify({ status: 403, err: "File not exportable" }),
+              {
+                status: 403,
+              }
+            );
+            const fetchMock = vi
+              .fn()
+              .mockReturnValueOnce(fileNotExportableResponse);
+
+            const onForbiddenMock = vi.fn();
+
+            const figmaRestApi = new FigmaRestApi({
+              fetch: fetchMock,
+              defaultOptions: {
+                token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                onForbidden: onForbiddenMock,
+              },
+            });
+
+            // Act & Assert
+            await expect(
+              figmaRestApi.getFile({
+                fileKey: "dummyFileKeyxxxxxxxxxx",
+                nodeIds: ["1:2", "1:4"],
+              })
+            ).rejects.toThrowError("File Not Exportable");
+
+            expect(onForbiddenMock).toHaveBeenCalledTimes(1);
+            expect(onForbiddenMock).toHaveBeenCalledWith(
+              expect.any(FileNotExportable)
+            );
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+          });
+        });
+
+        describe("and the onForbidden option is not defined", () => {
+          it("throws the FileNotExportable error immediately", async () => {
+            // Arrange
+            const fileNotExportableResponse = new Response(
+              JSON.stringify({ status: 403, err: "File not exportable" }),
+              {
+                status: 403,
+              }
+            );
+            const fetchMock = vi
+              .fn()
+              .mockReturnValueOnce(fileNotExportableResponse);
+            const figmaRestApi = new FigmaRestApi({
+              fetch: fetchMock,
+              defaultOptions: {
+                token: "figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+              },
+            });
+
+            // Act & Assert
+            await expect(
+              figmaRestApi.getFile({
+                fileKey: "dummyFileKeyxxxxxxxxxx",
+                nodeIds: ["1:2", "1:4"],
+              })
+            ).rejects.toThrowError("File Not Exportable");
             expect(fetchMock).toHaveBeenCalledTimes(1);
             expect(fetchMock).toHaveBeenNthCalledWith(
               1,

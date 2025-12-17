@@ -15,6 +15,7 @@ import {
   RateLimitExceeded,
   RequestTooLarge,
   UnknownFigmaApiException,
+  FileNotExportable,
 } from "./errors";
 
 type FigmaRestApiConstructor = {
@@ -38,6 +39,7 @@ export type Options = {
     error:
       | NeedsReauthFigmaToken
       | ExpiredFigmaToken
+      | FileNotExportable
       | UnknownForbiddenFigmaError
   ) => Promise<{ retry: { newToken: string } } | void>;
   onRateLimited?: (headers: {
@@ -137,6 +139,8 @@ class FigmaRestApi {
           throw new NeedsReauthFigmaToken();
         } else if (responseText?.includes("Token expired")) {
           throw new ExpiredFigmaToken();
+        } else if (responseText?.includes("File not exportable")) {
+          throw new FileNotExportable();
         }
 
         throw new UnknownForbiddenFigmaError({ reason: responseText });
@@ -222,6 +226,7 @@ class FigmaRestApi {
         nextOptions.onForbidden &&
         (error instanceof NeedsReauthFigmaToken ||
           error instanceof ExpiredFigmaToken ||
+          error instanceof FileNotExportable ||
           error instanceof UnknownForbiddenFigmaError)
       ) {
         const shouldRetry = await nextOptions.onForbidden(error);

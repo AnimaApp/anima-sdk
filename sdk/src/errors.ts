@@ -115,6 +115,12 @@ export class ExpiredFigmaToken extends Error {
   }
 }
 
+export class FileNotExportable extends Error {
+  constructor() {
+    super("File Not Exportable");
+  }
+}
+
 export class UnknownForbiddenFigmaError extends Error {
   reason: string | null;
 
