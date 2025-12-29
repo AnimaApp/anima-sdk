@@ -4,7 +4,7 @@ import {
   createJob,
   initialProgress,
   UseAnimaParams,
-} from "./createJob";
+} from "./job";
 
 /**
  * @deprecated use `createJob` from `AnimaSdkProvider` instead

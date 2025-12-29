@@ -2,7 +2,7 @@
 import { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { AnimaFiles, ProgressMessage } from '@animaapp/anima-sdk';
 import { FigmaRestApi } from '@animaapp/anima-sdk';
-import { initialProgress, createJob as sdkCreateJob, UseAnimaParams } from './createJob';
+import { initialProgress, createJob as sdkCreateJob, attachJob as sdkAttachJob, UseAnimaParams } from './job';
 
 type JobType = 'f2c' | 'l2c' | 'p2c';
 
@@ -41,6 +41,7 @@ type Job =
 
 type AnimaSdkContextType = {
   createJob: <T extends UseAnimaParams = UseAnimaParams>(type: JobType, params: T) => Promise<void>;
+  attachJob: <T extends UseAnimaParams = UseAnimaParams>(sessionId: string, params: T) => Promise<void>
   job: Job;
   figmaRestApi: FigmaRestApi;
 };
@@ -57,6 +58,14 @@ export class CreateJobError extends Error {
   constructor(message: string, cause: unknown) {
     super(message);
     this.name = 'CreateJobError';
+    this.cause = cause;
+  }
+}
+
+export class AttachJobError extends Error {
+  constructor(message: string, cause: unknown) {
+    super(message);
+    this.name = 'AttachJobError';
     this.cause = cause;
   }
 }
@@ -130,6 +139,68 @@ export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, childre
     }
   };
 
+  const attachJob = async (sessionId: string, params: UseAnimaParams) => {
+    const storedType = localStorage.getItem(`anima:${sessionId}:type`);
+    if (!storedType) {
+      throw new AttachJobError(
+        `Cannot attach job ${sessionId}: job type not found in local storage`,
+        null
+      );
+    }
+
+    if (!['f2c', 'l2c', 'p2c'].includes(storedType)) {
+      throw new AttachJobError(
+        `Invalid job type "${storedType}" for job ${sessionId}`,
+        null
+      );
+    }
+
+    const type = storedType as JobType;
+    currentJobType.current = type;
+
+    try {
+      const url = `${mappingJobTypeToUrl[type]}/${sessionId}`;
+      const { result } = await sdkAttachJob(
+        url,
+        params,
+        (newState) => setRawState(newState)
+      );
+
+      if (result) {
+        const files = result.files;
+        const assets = result.assets;
+
+        localStorage.removeItem(`anima:${sessionId}:type`);
+
+        setJob((job) => ({
+          status: 'success',
+          type,
+          params: 'params' in job ? job.params : {},
+          sessionId,
+          payload: rawState.jobStatus,
+          assets,
+          files,
+          progressMessages: rawState.progressMessages,
+        }));
+      }
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      const error = new AttachJobError(errorMessage, e);
+
+      setJob({
+        status: 'error',
+        type: currentJobType.current!,
+        params: {},
+        error,
+        sessionId,
+        payload: rawState.jobStatus,
+        progressMessages: rawState.progressMessages,
+      });
+
+      throw error;
+    }
+  };
+
   useEffect(() => {
     if (!currentJobType.current) {
       return;
@@ -154,6 +225,8 @@ export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, childre
     }
 
     if (rawState.status === 'pending') {
+      localStorage.setItem(`anima:${rawState.jobSessionId}:type`, jobType);
+
       setJob((job) => ({
         status: 'pending',
         type: jobType,
@@ -171,6 +244,7 @@ export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, childre
     <AnimaSdkContext.Provider
       value={{
         createJob,
+        attachJob,
         job,
         figmaRestApi,
       }}

@@ -88,47 +88,20 @@ const getAssetsLocalStrategyParams = (
   };
 };
 
-export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
-  url: string,
-  method: string,
-  params: T,
-  stateUpdated: (state: CodegenState) => void
-) => {
+const subscribeToJobStream = ({
+  es,
+  stateUpdated,
+}: {
+  es: EventSource;
+  stateUpdated: (state: CodegenState) => void;
+}) => {
   const state = structuredClone(initialProgress);
   state.status = "pending";
   stateUpdated({ ...state });
 
-  const initialParams = structuredClone(params);
+  let errorCount = 0;
 
-  if (params.assetsStorage?.strategy === "local") {
-    const { referencePath } = getAssetsLocalStrategyParams(
-      params.assetsStorage
-    );
-
-    params.assetsStorage = {
-      strategy: "external",
-      url: referencePath,
-    };
-  }
-
-  // TODO: We have two workarounds here because of limitations on the `eventsource` package:
-  // 1. We need to use the `fetch` function from the `EventSource` constructor to send the request with the correct method and body (https://github.com/EventSource/eventsource/issues/316#issuecomment-2525315835).
-  // 2. We need to store the last fetch response to handle errors to read its body response, since it isn't expoted by the package (https://github.com/EventSource/eventsource/blob/8aa7057bccd7fb819372a3b2c1292e7b53424d52/src/EventSource.ts#L348-L376)
-  // We might need to use other library, or do it from our self, to improve the code quality.
-  let lastFetchResponse: ReturnType<typeof fetch>;
-  const es = new EventSource(url, {
-    fetch: (url, init) => {
-      lastFetchResponse = fetch(url, {
-        ...init,
-        method,
-        body: JSON.stringify(params),
-      });
-
-      return lastFetchResponse;
-    },
-  });
-
-  const promise = new Promise<{
+  return new Promise<{
     result: AnimaSDKResult | null;
     error: CodegenError | null;
   }>((resolve, reject) => {
@@ -239,91 +212,25 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
       result.assets = message.payload.assets;
     });
 
-    let errorCount = 0;
-
-    // TODO: For some reason, we receive errors even after the `done` event is triggered.
-    es.addEventListener("error", async (error: ErrorEvent | MessageEvent) => {
-      // Check if the fetch is ok.
-      // If it is't, then the request failed before creating the job and we should terminate the request.
-      const response = await lastFetchResponse;
-      if (!response.ok) {
-        let errorMessage = "";
-        try {
-          errorMessage = await response.text();
-          const errorPayloadJson = JSON.parse(errorMessage);
-          if (errorPayloadJson?.payload?.message) {
-            errorMessage = errorPayloadJson.payload.message;
-          }
-        } catch {}
-
-        reject(
-          new CodegenError({
-            name: "Request failed",
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            reason: errorMessage as any,
-            status: response.status,
-          })
-        );
-        es.close();
-
-        return;
-      }
-
+    es.addEventListener("error", (event) => {
       console.warn(
-        `Experienced error during code generation (attempt ${errorCount + 1} / ${MAX_RETRIES_AFTER_ERROR})`,
-        error
+        `Stream error (attempt ${errorCount + 1} / ${MAX_RETRIES_AFTER_ERROR})`,
+        event
       );
 
-      let errorPayload: StreamMessageByType<"error"> | undefined;
+      errorCount++;
+      if (errorCount <= MAX_RETRIES_AFTER_ERROR) return;
 
-      // If true, then there's no point into keeping the event handler alive for retries.
-      let isUnrecoverableError = false;
-
-      if (error instanceof MessageEvent) {
-        try {
-          errorPayload = JSON.parse(error.data);
-        } catch {}
-      }
-
-      if (
-        errorPayload?.payload?.name === "Task Crashed" ||
-        errorPayload?.payload?.name === "TimeoutError" ||
-        errorPayload?.payload?.name === "Error" ||
-        errorPayload?.payload?.name === "Unknown error"
-      ) {
-        isUnrecoverableError = true;
-      }
-
-      const codegenError = new CodegenError({
-        name: errorPayload?.payload.name ?? "Unknown error",
-        reason: errorPayload?.payload.message ?? "Unknown",
-        status: errorPayload?.payload.status,
-        detail: errorPayload?.payload.detail,
+      const error = new CodegenError({
+        name: "Stream error",
+        reason: "Unknown",
       });
 
-      errorCount++;
+      state.status = "error";
+      state.error = error;
+      stateUpdated({ ...state });
 
-      // It could happen that transient network errors cause the "error" event to be triggered temporarily.
-      // In these cases, we ignore the error and retry the request, unless it's an unrecoverable error.
-      let shouldTerminateRequest = false;
-      if (errorCount > MAX_RETRIES_AFTER_ERROR) {
-        console.error("Experienced too many errors, terminating request");
-        shouldTerminateRequest = true;
-      } else if (isUnrecoverableError) {
-        console.error("Experienced unrecoverable error, terminating request");
-        shouldTerminateRequest = true;
-      }
-
-      if (shouldTerminateRequest) {
-        state.status = "error";
-        state.error = codegenError;
-        stateUpdated({ ...state });
-
-        resolve({
-          result: null,
-          error: codegenError,
-        });
-      }
+      resolve({ result: null, error });
     });
 
     es.addEventListener("done", (event) => {
@@ -335,12 +242,50 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
       state.result = result as AnimaSDKResult;
       stateUpdated({ ...state });
 
+      localStorage.removeItem(`anima:${result.sessionId}:type`);
+
       resolve({ result: result as AnimaSDKResult, error: null });
     });
   });
+};
+
+export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
+  url: string,
+  method: string,
+  params: T,
+  stateUpdated: (state: CodegenState) => void
+) => {
+  const initialParams = structuredClone(params);
+
+  if (params.assetsStorage?.strategy === "local") {
+    const { referencePath } = getAssetsLocalStrategyParams(
+      params.assetsStorage
+    );
+    params.assetsStorage = { strategy: "external", url: referencePath };
+  }
+
+  let lastFetchResponse: ReturnType<typeof fetch>;
+
+  const es = new EventSource(url, {
+    fetch: (url, init) => {
+      lastFetchResponse = fetch(url, {
+        ...init,
+        method,
+        body: JSON.stringify(params),
+      });
+      return lastFetchResponse;
+    },
+  });
 
   try {
-    const { result: r, error } = await promise;
+    const { result: r, error } = await subscribeToJobStream({
+      es,
+      stateUpdated,
+    });
+
+    if (error) {
+      return { result: null, error };
+    }
 
     const result = structuredClone(r);
 
@@ -354,7 +299,7 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
         initialParams.assetsStorage
       );
 
-      const downloadAssetsPromises = result.assets.map(async (asset) => {
+      const downloadAssetsPromises = result.assets.map(async (asset: any) => {
         const response = await fetch(asset.url);
         const buffer = await response.arrayBuffer();
         return {
@@ -380,11 +325,38 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
       }
     }
 
+    return { result, error: null };
+  } finally {
+    es.close();
+  }
+};
+
+export const attachJob = async <T extends UseAnimaParams = UseAnimaParams>(
+  url: string,
+  params: T,
+  stateUpdated: (state: CodegenState) => void
+) => {
+  const es = new EventSource(url, {
+    fetch: (url, init) => {
+      return fetch(url, {
+        ...init,
+        method: "POST",
+        body: JSON.stringify(params),
+      });
+    },
+  });
+
+  try {
+    const { result: r, error } = await subscribeToJobStream({
+      es,
+      stateUpdated,
+    });
     if (error) {
       return { result: null, error };
     }
 
-    return { result, error };
+    const result = structuredClone(r);
+    return { result, error: null };
   } finally {
     es.close();
   }

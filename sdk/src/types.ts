@@ -181,6 +181,11 @@ export type GetCodeFromPromptSettings = BaseSettings & {
   uiLibrary?: "shadcn";
 };
 
+export type AttachToGenerationJobParams = {
+  sessionId: string;
+  jobType: "codegen" | "l2c" | "p2c";
+};
+
 // SSE Messages
 
 export type SSECommonMessage<TErrorReason extends string = string> =

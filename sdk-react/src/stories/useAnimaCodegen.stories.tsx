@@ -2,7 +2,7 @@ import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "@storybook/test";
 import { AnimaSDKResult, CodegenError } from "@animaapp/anima-sdk";
 import type { Meta, StoryObj } from "@storybook/react";
-import type { UseAnimaParams } from "../createJob";
+import type { UseAnimaParams } from "../job";
 import { useAnimaCodegen } from "..";
 
 type Props = {

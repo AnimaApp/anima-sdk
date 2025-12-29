@@ -2,6 +2,7 @@
 import type { Anima } from "./anima";
 import type { GetCodeFromFigmaErrorReason } from "./errors";
 import type {
+  AttachToGenerationJobParams,
   GetCodeParams,
   GetCodeFromWebsiteParams,
   GetCodeFromPromptParams,
@@ -23,9 +24,9 @@ type StreamErrorPayload = {
 export type StreamMessage<T> =
   | Exclude<T, { type: "error" }>
   | {
-    type: "error";
-    payload: StreamErrorPayload;
-  };
+      type: "error";
+      payload: StreamErrorPayload;
+    };
 
 export type StreamCodgenMessage = StreamMessage<SSEGetCodeFromFigmaMessage>;
 export type StreamCodeFromWebsiteMessage =
@@ -36,7 +37,7 @@ export type StreamL2CMessage = StreamMessage<SSEGetCodeFromWebsiteMessage>;
 
 /**
  * Generic function to create a stream for both codegen and link2code.
- * 
+ *
  * @param anima - An Anima service instance
  * @param params - Parameters for the generation process
  * @param generateMethod - The method to call on the Anima instance
@@ -45,7 +46,7 @@ export type StreamL2CMessage = StreamMessage<SSEGetCodeFromWebsiteMessage>;
 function createGenerationStream<
   TParams,
   TMessage,
-  TStreamMessage extends StreamMessage<TMessage>
+  TStreamMessage extends StreamMessage<TMessage>,
 >(
   anima: Anima,
   params: TParams,
@@ -259,6 +260,31 @@ export const createCodeFromPromptResponseEventStream = async (
   params: GetCodeFromPromptParams
 ): Promise<Response> => {
   const stream = createCodeFromPromptStream(anima, params);
+  return createResponseEventStream(stream);
+};
+
+export const attachToGenerationJobStream = (
+  anima: Anima,
+  params: AttachToGenerationJobParams
+): ReadableStream<
+  | StreamCodgenMessage
+  | StreamCodeFromWebsiteMessage
+  | StreamCodeFromPromptMessage
+> => {
+  return createGenerationStream<
+    AttachToGenerationJobParams,
+    | SSEGetCodeFromFigmaMessage
+    | SSEGetCodeFromWebsiteMessage
+    | SSEGetCodeFromPromptMessage,
+    StreamCodeFromPromptMessage
+  >(anima, params, anima.attachToGenerationJob);
+};
+
+export const attachToGenerationJobResponseEventStream = async (
+  anima: Anima,
+  params: AttachToGenerationJobParams
+): Promise<Response> => {
+  const stream = attachToGenerationJobStream(anima, params);
   return createResponseEventStream(stream);
 };
 

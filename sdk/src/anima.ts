@@ -5,18 +5,17 @@ import { CodegenError, CodegenRouteErrorReason } from "./errors";
 import { validateSettings } from "./settings";
 import {
   AnimaSDKResult,
+  AttachToGenerationJobParams,
   GetCodeFromWebsiteHandler,
   GetCodeFromWebsiteParams,
   GetCodeFromPromptHandler,
   GetCodeFromPromptParams,
   GetCodeHandler,
   GetCodeParams,
-  GetLink2CodeHandler,
   GetLink2CodeParams,
-  SSECodegenMessage,
   SSEGetCodeFromWebsiteMessage,
   SSEGetCodeFromPromptMessage,
-  SSEL2CMessage,
+  SSEGetCodeFromFigmaMessage,
 } from "./types";
 import { isNodeCodegenCompatible } from "./utils/isNodeCodegenCompatible";
 import { FigmaRestApi } from "./FigmaRestApi";
@@ -105,7 +104,10 @@ export class Anima {
    * @returns The result of the generation process
    */
   async #processGenerationRequest<
-    T extends SSECodegenMessage | SSEL2CMessage | SSEGetCodeFromPromptMessage,
+    T extends
+      | SSEGetCodeFromFigmaMessage
+      | SSEGetCodeFromWebsiteMessage
+      | SSEGetCodeFromPromptMessage,
   >(
     endpoint: string,
     requestJson: object,
@@ -403,7 +405,7 @@ export class Anima {
       createSession: params.createSession,
     };
 
-    return this.#processGenerationRequest<SSECodegenMessage>(
+    return this.#processGenerationRequest<SSEGetCodeFromFigmaMessage>(
       "/v1/codegen",
       requestJson,
       handler,
@@ -554,7 +556,7 @@ export class Anima {
    */
   async generateLink2Code(
     params: GetLink2CodeParams,
-    handler: GetLink2CodeHandler = {},
+    handler: GetCodeFromWebsiteHandler = {},
     signal?: AbortSignal
   ) {
     let tracking = params.tracking;
@@ -570,11 +572,31 @@ export class Anima {
       params: params.params,
     };
 
-    return this.#processGenerationRequest<SSEL2CMessage>(
+    return this.#processGenerationRequest<SSEGetCodeFromWebsiteMessage>(
       "/v1/l2c",
       requestJson,
       handler,
       "l2c",
+      signal
+    );
+  }
+
+  async attachToGenerationJob<
+    T extends
+      | SSEGetCodeFromFigmaMessage
+      | SSEGetCodeFromWebsiteMessage
+      | SSEGetCodeFromPromptMessage,
+  >(
+    params: AttachToGenerationJobParams,
+    handler: ((message: T) => void) | Record<string, any> = {},
+    signal?: AbortSignal
+  ) {
+    const requestJson = {};
+    return this.#processGenerationRequest<T>(
+      `/v1/${params.jobType}/${params.sessionId}`,
+      requestJson,
+      handler,
+      params.jobType,
       signal
     );
   }
