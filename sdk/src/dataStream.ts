@@ -263,6 +263,15 @@ export const createCodeFromPromptResponseEventStream = async (
   return createResponseEventStream(stream);
 };
 
+/**
+ * Creates a ReadableStream to output code generation result.
+ *
+ * The stream is closed when the code generation ends.
+ *
+ * @param {Anima} anima - An Anima service instance to generate the code from.
+ * @param {GetCodeFromPromptParams} params - Parameters required for the code generation process.
+ * @returns {ReadableStream<StreamCodeFromPromptMessage>} - A ReadableStream that emits messages related to the code generation process.
+ */
 export const attachToGenerationJobStream = (
   anima: Anima,
   params: AttachToGenerationJobParams
@@ -276,10 +285,21 @@ export const attachToGenerationJobStream = (
     | SSEGetCodeFromFigmaMessage
     | SSEGetCodeFromWebsiteMessage
     | SSEGetCodeFromPromptMessage,
-    StreamCodeFromPromptMessage
+    | StreamCodgenMessage
+    | StreamCodeFromWebsiteMessage
+    | StreamCodeFromPromptMessage
   >(anima, params, anima.attachToGenerationJob);
 };
 
+/**
+ * Creates a Server-Sent Events (SSE) `Response` that forwards all messages from the code generation stream.
+ *
+ * But, if the first message indicates an error (e.g., connection failed), the function returns a 500 response with the error message.
+ *
+ * @param {Anima} anima - The Anima instance to use for creating the data stream.
+ * @param {GetCodeFromPromptParams} params - The parameters for the code generation request.
+ * @returns {Promise<Response>} - A promise that resolves to an HTTP response.
+ */
 export const attachToGenerationJobResponseEventStream = async (
   anima: Anima,
   params: AttachToGenerationJobParams

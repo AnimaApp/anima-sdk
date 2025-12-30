@@ -41,7 +41,7 @@ type Job =
 
 type AnimaSdkContextType = {
   createJob: <T extends UseAnimaParams = UseAnimaParams>(type: JobType, params: T) => Promise<void>;
-  attachJob: <T extends UseAnimaParams = UseAnimaParams>(sessionId: string, params: T) => Promise<void>
+  attachJob: <T extends UseAnimaParams = UseAnimaParams>(sessionId: string, params: T) => Promise<void>;
   job: Job;
   figmaRestApi: FigmaRestApi;
 };
@@ -169,8 +169,6 @@ export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, childre
       if (result) {
         const files = result.files;
         const assets = result.assets;
-
-        localStorage.removeItem(`anima:${sessionId}:type`);
 
         setJob((job) => ({
           status: 'success',
