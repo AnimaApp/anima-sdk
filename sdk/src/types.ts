@@ -183,7 +183,7 @@ export type GetCodeFromPromptSettings = BaseSettings & {
 
 // SSE Messages
 
-export type SSECommonMessage =
+export type SSECommonMessage<TErrorReason extends string = string> =
   | { type: "queueing"; payload: { sessionId: string } }
   | {
       type: "progress_messages_updated";
@@ -194,7 +194,9 @@ export type SSECommonMessage =
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       payload: { jobStatus: Record<string, any> };
     }
-  | { type: "aborted" };
+  | { type: "aborted" }
+  | { type: "done"; payload: { sessionId: string; tokenUsage: number } }
+  | { type: "error"; payload: SSEErrorPayload<TErrorReason> };
 
 export type SSEErrorPayload<Reason> = {
   errorName: string;
@@ -204,7 +206,7 @@ export type SSEErrorPayload<Reason> = {
 };
 
 export type SSEGetCodeFromFigmaMessage =
-  | SSECommonMessage
+  | SSECommonMessage<GetCodeFromFigmaErrorReason>
   | { type: "start"; sessionId: string }
   | {
       type: "figma_metadata";
@@ -219,15 +221,13 @@ export type SSEGetCodeFromFigmaMessage =
   | {
       type: "assets_list";
       payload: { assets: Array<{ name: string; url: string }> };
-    }
-  | { type: "error"; payload: SSEGetCodeFromFigmaMessageErrorPayload }
-  | { type: "done"; payload: { sessionId: string; tokenUsage: number } };
+    };
 
 export type SSEGetCodeFromFigmaMessageErrorPayload =
   SSEErrorPayload<GetCodeFromFigmaErrorReason>;
 
 export type SSEGetCodeFromWebsiteMessage =
-  | SSECommonMessage
+  | SSECommonMessage<GetCodeFromWebsiteErrorReason>
   | { type: "start"; sessionId: string }
   | { type: "generating_code"; payload: GeneratingCodePayload }
   | { type: "generation_completed" }
@@ -236,19 +236,15 @@ export type SSEGetCodeFromWebsiteMessage =
   | {
       type: "assets_list";
       payload: { assets: Array<{ name: string; url: string }> };
-    }
-  | { type: "error"; payload: SSEGetCodeFromWebsiteMessageErrorPayload }
-  | { type: "done"; payload: { sessionId: string; tokenUsage: number } };
+    };
 
 export type SSEGetCodeFromWebsiteMessageErrorPayload =
   SSEErrorPayload<GetCodeFromWebsiteErrorReason>;
 
 export type SSEGetCodeFromPromptMessage =
-  | SSECommonMessage
+  | SSECommonMessage<GetCodeFromPromptErrorReason>
   | { type: "start"; sessionId: string }
-  | { type: "generation_completed" }
-  | { type: "error"; payload: SSEGetCodeFromPromptMessageErrorPayload }
-  | { type: "done"; payload: { sessionId: string; tokenUsage: number } };
+  | { type: "generation_completed" };
 
 export type SSEGetCodeFromPromptMessageErrorPayload =
   SSEErrorPayload<GetCodeFromPromptErrorReason>;
