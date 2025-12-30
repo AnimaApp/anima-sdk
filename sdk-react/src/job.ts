@@ -90,21 +90,21 @@ const getAssetsLocalStrategyParams = (
 
 const subscribeToJobStream = ({
   es,
+  lastFetchResponse,
   stateUpdated,
 }: {
   es: EventSource;
+  lastFetchResponse: ReturnType<typeof fetch> | undefined;
   stateUpdated: (state: CodegenState) => void;
 }) => {
   const state = structuredClone(initialProgress);
   state.status = "pending";
   stateUpdated({ ...state });
 
-  let errorCount = 0;
-
   return new Promise<{
     result: AnimaSDKResult | null;
     error: CodegenError | null;
-  }>((resolve, _reject) => {
+  }>((resolve, reject) => {
     const result: Partial<AnimaSDKResult> = {};
 
     // Add specific event listeners
@@ -212,25 +212,95 @@ const subscribeToJobStream = ({
       result.assets = message.payload.assets;
     });
 
-    es.addEventListener("error", (event) => {
+    let errorCount = 0;
+
+    // TODO: For some reason, we receive errors even after the `done` event is triggered.
+    es.addEventListener("error", async (error: ErrorEvent | MessageEvent) => {
+      if (!lastFetchResponse) {
+        return;
+      }
+
+      // Check if the fetch is ok.
+      // If it is't, then the request failed before creating the job and we should terminate the request.
+      const response = await lastFetchResponse;
+      if (!response.ok) {
+        let errorMessage = "";
+        try {
+          errorMessage = await response.text();
+          const errorPayloadJson = JSON.parse(errorMessage);
+          if (errorPayloadJson?.payload?.message) {
+            errorMessage = errorPayloadJson.payload.message;
+          }
+        } catch {}
+
+        reject(
+          new CodegenError({
+            name: "Request failed",
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            reason: errorMessage as any,
+            status: response.status,
+          })
+        );
+        es.close();
+
+        return;
+      }
+
       console.warn(
-        `Stream error (attempt ${errorCount + 1} / ${MAX_RETRIES_AFTER_ERROR})`,
-        event
+        `Experienced error during code generation (attempt ${errorCount + 1} / ${MAX_RETRIES_AFTER_ERROR})`,
+        error
       );
 
-      errorCount++;
-      if (errorCount <= MAX_RETRIES_AFTER_ERROR) return;
+      let errorPayload: StreamMessageByType<"error"> | undefined;
 
-      const error = new CodegenError({
-        name: "Stream error",
-        reason: "Unknown",
+      // If true, then there's no point into keeping the event handler alive for retries.
+      let isUnrecoverableError = false;
+
+      if (error instanceof MessageEvent) {
+        try {
+          errorPayload = JSON.parse(error.data);
+        } catch {}
+      }
+
+      if (
+        errorPayload?.payload?.name === "Task Crashed" ||
+        errorPayload?.payload?.name === "TimeoutError" ||
+        errorPayload?.payload?.name === "Error" ||
+        errorPayload?.payload?.name === "Unknown error"
+      ) {
+        isUnrecoverableError = true;
+      }
+
+      const codegenError = new CodegenError({
+        name: errorPayload?.payload.name ?? "Unknown error",
+        reason: errorPayload?.payload.message ?? "Unknown",
+        status: errorPayload?.payload.status,
+        detail: errorPayload?.payload.detail,
       });
 
-      state.status = "error";
-      state.error = error;
-      stateUpdated({ ...state });
+      errorCount++;
 
-      resolve({ result: null, error });
+      // It could happen that transient network errors cause the "error" event to be triggered temporarily.
+      // In these cases, we ignore the error and retry the request, unless it's an unrecoverable error.
+      let shouldTerminateRequest = false;
+      if (errorCount > MAX_RETRIES_AFTER_ERROR) {
+        console.error("Experienced too many errors, terminating request");
+        shouldTerminateRequest = true;
+      } else if (isUnrecoverableError) {
+        console.error("Experienced unrecoverable error, terminating request");
+        shouldTerminateRequest = true;
+      }
+
+      if (shouldTerminateRequest) {
+        state.status = "error";
+        state.error = codegenError;
+        stateUpdated({ ...state });
+
+        resolve({
+          result: null,
+          error: codegenError,
+        });
+      }
     });
 
     es.addEventListener("done", (event) => {
@@ -241,8 +311,6 @@ const subscribeToJobStream = ({
       state.status = "success";
       state.result = result as AnimaSDKResult;
       stateUpdated({ ...state });
-
-      localStorage.removeItem(`anima:${result.sessionId}:type`);
 
       resolve({ result: result as AnimaSDKResult, error: null });
     });
@@ -264,8 +332,11 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
     params.assetsStorage = { strategy: "external", url: referencePath };
   }
 
-  let lastFetchResponse: ReturnType<typeof fetch>;
-
+  // TODO: We have two workarounds here because of limitations on the `eventsource` package:
+  // 1. We need to use the `fetch` function from the `EventSource` constructor to send the request with the correct method and body (https://github.com/EventSource/eventsource/issues/316#issuecomment-2525315835).
+  // 2. We need to store the last fetch response to handle errors to read its body response, since it isn't expoted by the package (https://github.com/EventSource/eventsource/blob/8aa7057bccd7fb819372a3b2c1292e7b53424d52/src/EventSource.ts#L348-L376)
+  // We might need to use other library, or do it from our self, to improve the code quality.
+  let lastFetchResponse: ReturnType<typeof fetch> | undefined;
   const es = new EventSource(url, {
     fetch: (url, init) => {
       lastFetchResponse = fetch(url, {
@@ -280,6 +351,7 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
   try {
     const { result: r, error } = await subscribeToJobStream({
       es,
+      lastFetchResponse,
       stateUpdated,
     });
 
@@ -336,19 +408,22 @@ export const attachJob = async <T extends UseAnimaParams = UseAnimaParams>(
   params: T,
   stateUpdated: (state: CodegenState) => void
 ) => {
+  let lastFetchResponse: ReturnType<typeof fetch> | undefined;
   const es = new EventSource(url, {
     fetch: (url, init) => {
-      return fetch(url, {
+      lastFetchResponse = fetch(url, {
         ...init,
         method: "POST",
         body: JSON.stringify(params),
       });
+      return lastFetchResponse;
     },
   });
 
   try {
     const { result: r, error } = await subscribeToJobStream({
       es,
+      lastFetchResponse,
       stateUpdated,
     });
     if (error) {

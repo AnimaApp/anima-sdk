@@ -364,7 +364,23 @@ The `settingsOptions` parameter is explained in the next section.
 
 **Note:** This method throws a `CreateJobError` if job creation fails (e.g., 404 error).
 
-3. **Monitor job progress** - Track the status of your job:
+3. **Attach to a code generation job** - Use the hook to attach to existing jobs:
+
+```ts
+const { attachJob } = useAnimaSDK();
+
+const onClick = async () => {
+  await attachJob('example-job-id', settingsOptions)
+}
+```
+
+This begins reading updates via SSE.
+
+The `settingsOptions` parameter is explained in the next section.
+
+**Note:** This method throws a `AttachJobError` if job attachment fails (e.g., 404 error).
+
+4. **Monitor job progress** - Track the status of your job:
 
 ```ts
 const { job } = useAnimaSDK();
