@@ -104,7 +104,7 @@ const subscribeToJobStream = ({
   return new Promise<{
     result: AnimaSDKResult | null;
     error: CodegenError | null;
-  }>((resolve, reject) => {
+  }>((resolve, _reject) => {
     const result: Partial<AnimaSDKResult> = {};
 
     // Add specific event listeners
@@ -299,7 +299,7 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
         initialParams.assetsStorage
       );
 
-      const downloadAssetsPromises = result.assets.map(async (asset: any) => {
+      const downloadAssetsPromises = result.assets.map(async (asset) => {
         const response = await fetch(asset.url);
         const buffer = await response.arrayBuffer();
         return {
