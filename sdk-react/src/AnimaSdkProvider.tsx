@@ -10,7 +10,7 @@ type Job =
   | { status: 'idle' }
   | {
     status: 'error';
-    type?: JobType;
+    type: JobType;
     params: Record<string, any>;
     error: CreateJobError;
     sessionId: string | null;
@@ -19,7 +19,7 @@ type Job =
   }
   | {
     status: 'pending';
-    type?: JobType;
+    type: JobType;
     params: Record<string, any>;
     sessionId: string | null;
     payload: Record<string, any>;
@@ -169,7 +169,7 @@ export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, jobsUrl
 
       setJob({
         status: 'error',
-        type: currentJobType.current ?? undefined,
+        type: currentJobType.current!,
         params: {},
         error,
         sessionId,
@@ -182,7 +182,11 @@ export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, jobsUrl
   };
 
   useEffect(() => {
-    const jobType = currentJobType.current ?? undefined;
+    if (!currentJobType.current) {
+      return;
+    }
+
+    const jobType = currentJobType.current
 
     if (rawState.status === 'error') {
       const error = rawState.error ?? new UnknownCodegenError();
