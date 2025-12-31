@@ -183,7 +183,6 @@ export type GetCodeFromPromptSettings = BaseSettings & {
 
 export type AttachToGenerationJobParams = {
   sessionId: string;
-  jobType: "codegen" | "l2c" | "p2c";
 };
 
 // SSE Messages

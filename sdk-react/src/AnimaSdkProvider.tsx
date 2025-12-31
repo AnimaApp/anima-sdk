@@ -27,7 +27,7 @@ type Job =
   }
   | {
     status: 'success';
-    type: JobType;
+    type?: JobType;
     params: Record<string, any>;
     sessionId: string;
     payload: Record<string, any>;
@@ -51,6 +51,7 @@ type Props = {
   f2cUrl: string;
   l2cUrl: string;
   p2cUrl: string;
+  jobsUrl: string;
   children: ReactNode;
 };
 
@@ -79,7 +80,7 @@ export class UnknownCodegenError extends Error {
 
 export const AnimaSdkContext = createContext<AnimaSdkContextType | null>(null);
 
-export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, children }: Props) {
+export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, jobsUrl, children }: Props) {
   const [job, setJob] = useState<Job>({ status: 'idle' });
   const currentJobType = useRef<JobType | null>(null);
   const [rawState, setRawState] = useState(initialProgress);
@@ -140,26 +141,8 @@ export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, childre
   };
 
   const attachJob = async (sessionId: string, params: UseAnimaParams) => {
-    const storedType = localStorage.getItem(`anima:${sessionId}:type`);
-    if (!storedType) {
-      throw new AttachJobError(
-        `Cannot attach job ${sessionId}: job type not found in local storage`,
-        null
-      );
-    }
-
-    if (!['f2c', 'l2c', 'p2c'].includes(storedType)) {
-      throw new AttachJobError(
-        `Invalid job type "${storedType}" for job ${sessionId}`,
-        null
-      );
-    }
-
-    const type = storedType as JobType;
-    currentJobType.current = type;
-
     try {
-      const url = `${mappingJobTypeToUrl[type]}/${sessionId}`;
+      const url = `${jobsUrl}/${sessionId}`;
       const { result } = await sdkAttachJob(
         url,
         params,
@@ -172,7 +155,6 @@ export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, childre
 
         setJob((job) => ({
           status: 'success',
-          type,
           params: 'params' in job ? job.params : {},
           sessionId,
           payload: rawState.jobStatus,
@@ -223,8 +205,6 @@ export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, childre
     }
 
     if (rawState.status === 'pending') {
-      localStorage.setItem(`anima:${rawState.jobSessionId}:type`, jobType);
-
       setJob((job) => ({
         status: 'pending',
         type: jobType,

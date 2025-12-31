@@ -109,10 +109,11 @@ export class Anima {
       | SSEGetCodeFromWebsiteMessage
       | SSEGetCodeFromPromptMessage,
   >(
+    method: "GET" | "POST",
     endpoint: string,
     requestJson: object,
     handler: ((message: T) => void) | Record<string, any>,
-    messageType: "codegen" | "l2c" | "p2c",
+    messageType?: "codegen" | "l2c" | "p2c",
     signal?: AbortSignal
   ): Promise<AnimaSDKResult> {
     if (this.hasAuth() === false) {
@@ -120,20 +121,25 @@ export class Anima {
     }
 
     const result: Partial<AnimaSDKResult> = {};
-
-    const requestBody = gzip(JSON.stringify(requestJson));
-
-    const response = await fetch(`${this.#apiBaseAddress}${endpoint}`, {
-      method: "POST",
+    const init: RequestInit = {
+      method,
       headers: {
         ...this.headers,
         Accept: "text/event-stream",
+      },
+      signal,
+    };
+    if (method === "POST") {
+      const requestBody = gzip(JSON.stringify(requestJson));
+      init.body = requestBody;
+      init.headers = {
+        ...(init.headers as HeadersInit),
         "Content-Encoding": "gzip",
         "Content-Type": "application/json",
-      },
-      body: requestBody,
-      signal,
-    });
+      };
+    }
+
+    const response = await fetch(`${this.#apiBaseAddress}${endpoint}`, init);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -406,6 +412,7 @@ export class Anima {
     };
 
     return this.#processGenerationRequest<SSEGetCodeFromFigmaMessage>(
+      "POST",
       "/v1/codegen",
       requestJson,
       handler,
@@ -473,6 +480,7 @@ export class Anima {
     };
 
     return this.#processGenerationRequest<SSEGetCodeFromWebsiteMessage>(
+      "POST",
       "/v1/l2c",
       requestJson,
       handler,
@@ -543,6 +551,7 @@ export class Anima {
     };
 
     return this.#processGenerationRequest<SSEGetCodeFromPromptMessage>(
+      "POST",
       "/v1/p2c",
       requestJson,
       handler,
@@ -573,6 +582,7 @@ export class Anima {
     };
 
     return this.#processGenerationRequest<SSEGetCodeFromWebsiteMessage>(
+      "POST",
       "/v1/l2c",
       requestJson,
       handler,
@@ -592,11 +602,13 @@ export class Anima {
     signal?: AbortSignal
   ) {
     const requestJson = {};
+    const messageType = undefined;
     return this.#processGenerationRequest<T>(
-      `/v1/${params.jobType}/${params.sessionId}`,
+      "GET",
+      `/v1/jobs/${params.sessionId}`,
       requestJson,
       handler,
-      params.jobType,
+      messageType,
       signal
     );
   }
