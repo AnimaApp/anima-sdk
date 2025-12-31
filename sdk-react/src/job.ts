@@ -360,42 +360,7 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
     }
 
     const result = structuredClone(r);
-
-    // Ideally, we should download the assets within the `assets_uploaded` event handler, since it'll improve the performance.
-    // But for some reason, it doesn't work. So, we download the assets here.
-    if (
-      initialParams.assetsStorage?.strategy === "local" &&
-      result?.assets?.length
-    ) {
-      const { filePath } = getAssetsLocalStrategyParams(
-        initialParams.assetsStorage
-      );
-
-      const downloadAssetsPromises = result.assets.map(async (asset) => {
-        const response = await fetch(asset.url);
-        const buffer = await response.arrayBuffer();
-        return {
-          assetName: asset.name,
-          base64: arrayBufferToBase64(buffer),
-        };
-      });
-
-      const assets = await Promise.allSettled(downloadAssetsPromises);
-      for (const assetPromise of assets) {
-        const assetsList: Record<string, string> = {};
-        if (assetPromise.status === "fulfilled") {
-          const { assetName, base64 } = assetPromise.value;
-
-          assetsList[assetName] = base64;
-
-          const assetPath = filePath ? `${filePath}/${assetName}` : assetName;
-          result.files[assetPath] = {
-            content: base64,
-            isBinary: true,
-          };
-        }
-      }
-    }
+    downloadResultAssets(result, initialParams);
 
     return { result, error: null };
   } finally {
@@ -408,6 +373,8 @@ export const attachJob = async <T extends UseAnimaParams = UseAnimaParams>(
   params: T,
   stateUpdated: (state: CodegenState) => void
 ) => {
+  const initialParams = structuredClone(params);
+
   let lastFetchResponse: ReturnType<typeof fetch> | undefined;
   const es = new EventSource(url, {
     fetch: (url, init) => {
@@ -431,8 +398,50 @@ export const attachJob = async <T extends UseAnimaParams = UseAnimaParams>(
     }
 
     const result = structuredClone(r);
+    downloadResultAssets(result, initialParams);
+
     return { result, error: null };
   } finally {
     es.close();
   }
+};
+
+const downloadResultAssets = async <T extends UseAnimaParams = UseAnimaParams>(
+  result: Partial<AnimaSDKResult>,
+  params: T
+): Promise<Partial<AnimaSDKResult>> => {
+  // Ideally, we should download the assets within the `assets_uploaded` event handler, since it'll improve the performance.
+  // But for some reason, it doesn't work. So, we download the assets here.
+  if (params.assetsStorage?.strategy === "local" && result?.assets?.length) {
+    const { filePath } = getAssetsLocalStrategyParams(params.assetsStorage);
+
+    const downloadAssetsPromises = result.assets.map(
+      async (asset: { name: string; url: string }) => {
+        const response = await fetch(asset.url);
+        const buffer = await response.arrayBuffer();
+        return {
+          assetName: asset.name,
+          base64: arrayBufferToBase64(buffer),
+        };
+      }
+    );
+
+    const assets = await Promise.allSettled(downloadAssetsPromises);
+    for (const assetPromise of assets) {
+      const assetsList: Record<string, string> = {};
+      if (assetPromise.status === "fulfilled") {
+        const { assetName, base64 } = assetPromise.value;
+
+        assetsList[assetName] = base64;
+
+        const assetPath = filePath ? `${filePath}/${assetName}` : assetName;
+        result.files[assetPath] = {
+          content: base64,
+          isBinary: true,
+        };
+      }
+    }
+  }
+
+  return result;
 };
