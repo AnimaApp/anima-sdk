@@ -428,7 +428,7 @@ export const attachJob = async <T extends UseAnimaParams = UseAnimaParams>(
 const downloadResultAssets = async <T extends UseAnimaParams = UseAnimaParams>(
   result: Partial<AnimaSDKResult>,
   params: T
-): Promise<Partial<AnimaSDKResult>> => {
+): Promise<void> => {
   // Ideally, we should download the assets within the `assets_uploaded` event handler, since it'll improve the performance.
   // But for some reason, it doesn't work. So, we download the assets here.
   if (params.assetsStorage?.strategy === "local" && result?.assets?.length) {
@@ -461,6 +461,4 @@ const downloadResultAssets = async <T extends UseAnimaParams = UseAnimaParams>(
       }
     }
   }
-
-  return result;
 };
