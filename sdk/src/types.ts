@@ -191,12 +191,12 @@ export type SSECommonMessage<TErrorReason extends string = string> =
   | { type: "queueing"; payload: { sessionId: string } }
   | {
       type: "progress_messages_updated";
-      payload: { progressMessages: ProgressMessage[] };
+      payload: { progressMessages: ProgressMessage[]; jobType?: string | null };
     }
   | {
       type: "job_status_updated";
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      payload: { jobStatus: Record<string, any> };
+      payload: { jobStatus: Record<string, any>; jobType?: string | null };
     }
   | { type: "aborted" }
   | { type: "done"; payload: { sessionId: string; tokenUsage: number } }

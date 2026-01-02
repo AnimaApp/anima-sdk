@@ -14,6 +14,11 @@ type Status = "idle" | "pending" | "success" | "aborted" | "error";
 
 type TaskStatus = "pending" | "running" | "finished";
 
+export type JobType = "f2c" | "l2c" | "p2c";
+const JOB_TYPE_CONVERSION_MAP: Record<string, string> = {
+  codegen: "f2c",
+};
+
 export type CodegenState = {
   status: Status;
   error: CodegenError | null;
@@ -27,6 +32,7 @@ export type CodegenState = {
   jobSessionId: string | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   jobStatus: Record<string, any>;
+  jobType: JobType | null;
 };
 
 export const initialProgress: CodegenState = {
@@ -41,6 +47,7 @@ export const initialProgress: CodegenState = {
   },
   jobSessionId: null,
   jobStatus: {},
+  jobType: null,
 };
 
 type StreamMessageByType<T extends StreamCodgenMessage["type"]> = Extract<
@@ -100,6 +107,16 @@ const subscribeToJobStream = ({
   const state = structuredClone(initialProgress);
   state.status = "pending";
   stateUpdated({ ...state });
+
+  const normalizeJobType = (
+    jobType: string | null | undefined
+  ): JobType | null => {
+    if (!jobType) {
+      return null;
+    }
+
+    return (JOB_TYPE_CONVERSION_MAP[jobType] ?? jobType) as JobType;
+  };
 
   return new Promise<{
     result: AnimaSDKResult | null;
@@ -177,6 +194,7 @@ const subscribeToJobStream = ({
       ) as StreamMessageByType<"progress_messages_updated">;
 
       state.progressMessages = message.payload.progressMessages;
+      state.jobType = normalizeJobType(message.payload.jobType);
       stateUpdated({ ...state });
     });
 
@@ -186,6 +204,7 @@ const subscribeToJobStream = ({
       ) as StreamMessageByType<"job_status_updated">;
 
       state.jobStatus = message.payload.jobStatus;
+      state.jobType = normalizeJobType(message.payload.jobType);
       stateUpdated({ ...state });
     });
 

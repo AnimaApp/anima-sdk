@@ -20,6 +20,10 @@ import {
 import { isNodeCodegenCompatible } from "./utils/isNodeCodegenCompatible";
 import { FigmaRestApi } from "./FigmaRestApi";
 
+const JOB_TYPE_CONVERSION_MAP: Record<string, string> = {
+  codegen: "f2c",
+};
+
 export type Auth =
   | { token: string; teamId: string } // for Anima user, it's mandatory to have an associated team
   | { token: string; userId?: string }; // for users from a 3rd-party integrations, they may have optionally a user id
@@ -185,6 +189,12 @@ export class Anima {
       });
     }
 
+    const jobType = response.headers.get("x-anima-job-type");
+    const normalizedJobType =
+      jobType && JOB_TYPE_CONVERSION_MAP[jobType]
+        ? JOB_TYPE_CONVERSION_MAP[jobType]
+        : jobType;
+
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
@@ -294,7 +304,10 @@ export class Anima {
 
               case "progress_messages_updated": {
                 typeof handler === "function"
-                  ? handler(data)
+                  ? handler({
+                      ...data,
+                      payload: { ...data.payload, jobType: normalizedJobType },
+                    })
                   : handler.onProgressMessagesUpdated?.(
                       data.payload.progressMessages
                     );
@@ -303,7 +316,10 @@ export class Anima {
 
               case "job_status_updated": {
                 typeof handler === "function"
-                  ? handler(data)
+                  ? handler({
+                      ...data,
+                      payload: { ...data.payload, jobType: normalizedJobType },
+                    })
                   : handler.onJobStatusUpdated?.(data.payload.jobStatus);
                 break;
               }
