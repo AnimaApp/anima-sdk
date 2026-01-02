@@ -14,6 +14,11 @@ type Status = "idle" | "pending" | "success" | "aborted" | "error";
 
 type TaskStatus = "pending" | "running" | "finished";
 
+export type JobType = "f2c" | "l2c" | "p2c";
+const JOB_TYPE_CONVERSION_MAP: Record<string, string> = {
+  codegen: "f2c",
+};
+
 export type CodegenState = {
   status: Status;
   error: CodegenError | null;
@@ -27,6 +32,7 @@ export type CodegenState = {
   jobSessionId: string | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   jobStatus: Record<string, any>;
+  jobType: JobType | null;
 };
 
 export const initialProgress: CodegenState = {
@@ -41,6 +47,7 @@ export const initialProgress: CodegenState = {
   },
   jobSessionId: null,
   jobStatus: {},
+  jobType: null,
 };
 
 type StreamMessageByType<T extends StreamCodgenMessage["type"]> = Extract<
@@ -88,47 +95,30 @@ const getAssetsLocalStrategyParams = (
   };
 };
 
-export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
-  url: string,
-  method: string,
-  params: T,
-  stateUpdated: (state: CodegenState) => void
-) => {
+const subscribeToJobStream = ({
+  es,
+  lastFetchResponse,
+  stateUpdated,
+}: {
+  es: EventSource;
+  lastFetchResponse: ReturnType<typeof fetch> | undefined;
+  stateUpdated: (state: CodegenState) => void;
+}) => {
   const state = structuredClone(initialProgress);
   state.status = "pending";
   stateUpdated({ ...state });
 
-  const initialParams = structuredClone(params);
+  const normalizeJobType = (
+    jobType: string | null | undefined
+  ): JobType | null => {
+    if (!jobType) {
+      return null;
+    }
 
-  if (params.assetsStorage?.strategy === "local") {
-    const { referencePath } = getAssetsLocalStrategyParams(
-      params.assetsStorage
-    );
+    return (JOB_TYPE_CONVERSION_MAP[jobType] ?? jobType) as JobType;
+  };
 
-    params.assetsStorage = {
-      strategy: "external",
-      url: referencePath,
-    };
-  }
-
-  // TODO: We have two workarounds here because of limitations on the `eventsource` package:
-  // 1. We need to use the `fetch` function from the `EventSource` constructor to send the request with the correct method and body (https://github.com/EventSource/eventsource/issues/316#issuecomment-2525315835).
-  // 2. We need to store the last fetch response to handle errors to read its body response, since it isn't expoted by the package (https://github.com/EventSource/eventsource/blob/8aa7057bccd7fb819372a3b2c1292e7b53424d52/src/EventSource.ts#L348-L376)
-  // We might need to use other library, or do it from our self, to improve the code quality.
-  let lastFetchResponse: ReturnType<typeof fetch>;
-  const es = new EventSource(url, {
-    fetch: (url, init) => {
-      lastFetchResponse = fetch(url, {
-        ...init,
-        method,
-        body: JSON.stringify(params),
-      });
-
-      return lastFetchResponse;
-    },
-  });
-
-  const promise = new Promise<{
+  return new Promise<{
     result: AnimaSDKResult | null;
     error: CodegenError | null;
   }>((resolve, reject) => {
@@ -204,6 +194,7 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
       ) as StreamMessageByType<"progress_messages_updated">;
 
       state.progressMessages = message.payload.progressMessages;
+      state.jobType = normalizeJobType(message.payload.jobType);
       stateUpdated({ ...state });
     });
 
@@ -213,6 +204,7 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
       ) as StreamMessageByType<"job_status_updated">;
 
       state.jobStatus = message.payload.jobStatus;
+      state.jobType = normalizeJobType(message.payload.jobType);
       stateUpdated({ ...state });
     });
 
@@ -243,6 +235,10 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
 
     // TODO: For some reason, we receive errors even after the `done` event is triggered.
     es.addEventListener("error", async (error: ErrorEvent | MessageEvent) => {
+      if (!lastFetchResponse) {
+        return;
+      }
+
       // Check if the fetch is ok.
       // If it is't, then the request failed before creating the job and we should terminate the request.
       const response = await lastFetchResponse;
@@ -338,54 +334,131 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
       resolve({ result: result as AnimaSDKResult, error: null });
     });
   });
+};
+
+export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
+  url: string,
+  method: string,
+  params: T,
+  stateUpdated: (state: CodegenState) => void
+) => {
+  const initialParams = structuredClone(params);
+
+  if (params.assetsStorage?.strategy === "local") {
+    const { referencePath } = getAssetsLocalStrategyParams(
+      params.assetsStorage
+    );
+    params.assetsStorage = { strategy: "external", url: referencePath };
+  }
+
+  // TODO: We have two workarounds here because of limitations on the `eventsource` package:
+  // 1. We need to use the `fetch` function from the `EventSource` constructor to send the request with the correct method and body (https://github.com/EventSource/eventsource/issues/316#issuecomment-2525315835).
+  // 2. We need to store the last fetch response to handle errors to read its body response, since it isn't expoted by the package (https://github.com/EventSource/eventsource/blob/8aa7057bccd7fb819372a3b2c1292e7b53424d52/src/EventSource.ts#L348-L376)
+  // We might need to use other library, or do it from our self, to improve the code quality.
+  let lastFetchResponse: ReturnType<typeof fetch> | undefined;
+  const es = new EventSource(url, {
+    fetch: (url, init) => {
+      lastFetchResponse = fetch(url, {
+        ...init,
+        method,
+        body: JSON.stringify(params),
+      });
+      return lastFetchResponse;
+    },
+  });
 
   try {
-    const { result: r, error } = await promise;
+    const { result: r, error } = await subscribeToJobStream({
+      es,
+      lastFetchResponse,
+      stateUpdated,
+    });
+
+    if (error) {
+      return { result: null, error };
+    }
 
     const result = structuredClone(r);
+    downloadResultAssets(result, initialParams);
 
-    // Ideally, we should download the assets within the `assets_uploaded` event handler, since it'll improve the performance.
-    // But for some reason, it doesn't work. So, we download the assets here.
-    if (
-      initialParams.assetsStorage?.strategy === "local" &&
-      result?.assets?.length
-    ) {
-      const { filePath } = getAssetsLocalStrategyParams(
-        initialParams.assetsStorage
-      );
+    return { result, error: null };
+  } finally {
+    es.close();
+  }
+};
 
-      const downloadAssetsPromises = result.assets.map(async (asset) => {
+export const attachJob = async <T extends UseAnimaParams = UseAnimaParams>(
+  url: string,
+  params: T,
+  stateUpdated: (state: CodegenState) => void
+) => {
+  const initialParams = structuredClone(params);
+
+  let lastFetchResponse: ReturnType<typeof fetch> | undefined;
+  const es = new EventSource(url, {
+    fetch: (url, init) => {
+      lastFetchResponse = fetch(url, {
+        ...init,
+        method: "POST",
+        body: JSON.stringify(params),
+      });
+      return lastFetchResponse;
+    },
+  });
+
+  try {
+    const { result: r, error } = await subscribeToJobStream({
+      es,
+      lastFetchResponse,
+      stateUpdated,
+    });
+    if (error) {
+      return { result: null, error };
+    }
+
+    const result = structuredClone(r);
+    downloadResultAssets(result, initialParams);
+
+    return { result, error: null };
+  } finally {
+    es.close();
+  }
+};
+
+const downloadResultAssets = async <T extends UseAnimaParams = UseAnimaParams>(
+  result: Partial<AnimaSDKResult>,
+  params: T
+): Promise<void> => {
+  // Ideally, we should download the assets within the `assets_uploaded` event handler, since it'll improve the performance.
+  // But for some reason, it doesn't work. So, we download the assets here.
+  if (params.assetsStorage?.strategy === "local" && result?.assets?.length) {
+    const { filePath } = getAssetsLocalStrategyParams(params.assetsStorage);
+
+    const downloadAssetsPromises = result.assets.map(
+      async (asset: { name: string; url: string }) => {
         const response = await fetch(asset.url);
         const buffer = await response.arrayBuffer();
         return {
           assetName: asset.name,
           base64: arrayBufferToBase64(buffer),
         };
-      });
+      }
+    );
 
-      const assets = await Promise.allSettled(downloadAssetsPromises);
-      for (const assetPromise of assets) {
-        const assetsList: Record<string, string> = {};
-        if (assetPromise.status === "fulfilled") {
-          const { assetName, base64 } = assetPromise.value;
+    const assets = await Promise.allSettled(downloadAssetsPromises);
+    for (const assetPromise of assets) {
+      const assetsList: Record<string, string> = {};
+      if (assetPromise.status === "fulfilled") {
+        const { assetName, base64 } = assetPromise.value;
 
-          assetsList[assetName] = base64;
+        assetsList[assetName] = base64;
 
-          const assetPath = filePath ? `${filePath}/${assetName}` : assetName;
-          result.files[assetPath] = {
-            content: base64,
-            isBinary: true,
-          };
-        }
+        const assetPath = filePath ? `${filePath}/${assetName}` : assetName;
+        result.files[assetPath] = {
+          content: base64,
+          isBinary: true,
+        };
       }
     }
-
-    if (error) {
-      return { result: null, error };
-    }
-
-    return { result, error };
-  } finally {
-    es.close();
   }
 };

@@ -2,9 +2,8 @@
 import { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { AnimaFiles, ProgressMessage } from '@animaapp/anima-sdk';
 import { FigmaRestApi } from '@animaapp/anima-sdk';
-import { initialProgress, createJob as sdkCreateJob, UseAnimaParams } from './createJob';
+import { initialProgress, createJob as sdkCreateJob, attachJob as sdkAttachJob, UseAnimaParams, JobType } from './job';
 
-type JobType = 'f2c' | 'l2c' | 'p2c';
 
 type Job =
   | { status: 'idle' }
@@ -27,7 +26,7 @@ type Job =
   }
   | {
     status: 'success';
-    type: JobType;
+    type?: JobType;
     params: Record<string, any>;
     sessionId: string;
     payload: Record<string, any>;
@@ -41,6 +40,7 @@ type Job =
 
 type AnimaSdkContextType = {
   createJob: <T extends UseAnimaParams = UseAnimaParams>(type: JobType, params: T) => Promise<void>;
+  attachJob: <T extends UseAnimaParams = UseAnimaParams>(sessionId: string, params: T) => Promise<void>;
   job: Job;
   figmaRestApi: FigmaRestApi;
 };
@@ -50,6 +50,7 @@ type Props = {
   f2cUrl: string;
   l2cUrl: string;
   p2cUrl: string;
+  jobsUrl?: string;
   children: ReactNode;
 };
 
@@ -57,6 +58,14 @@ export class CreateJobError extends Error {
   constructor(message: string, cause: unknown) {
     super(message);
     this.name = 'CreateJobError';
+    this.cause = cause;
+  }
+}
+
+export class AttachJobError extends Error {
+  constructor(message: string, cause: unknown) {
+    super(message);
+    this.name = 'AttachJobError';
     this.cause = cause;
   }
 }
@@ -70,7 +79,7 @@ export class UnknownCodegenError extends Error {
 
 export const AnimaSdkContext = createContext<AnimaSdkContextType | null>(null);
 
-export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, children }: Props) {
+export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, jobsUrl, children }: Props) {
   const [job, setJob] = useState<Job>({ status: 'idle' });
   const currentJobType = useRef<JobType | null>(null);
   const [rawState, setRawState] = useState(initialProgress);
@@ -130,12 +139,56 @@ export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, childre
     }
   };
 
-  useEffect(() => {
-    if (!currentJobType.current) {
-      return;
+  const attachJob = async (sessionId: string, params: UseAnimaParams) => {
+    if (!jobsUrl) {
+      throw new Error('jobsUrl is required in order to attach to a job');
     }
 
-    const jobType = currentJobType.current
+    try {
+      const url = `${jobsUrl}/${sessionId}`;
+      const { result } = await sdkAttachJob(
+        url,
+        params,
+        (newState) => setRawState(newState)
+      );
+
+      if (result) {
+        const files = result.files;
+        const assets = result.assets;
+
+        setJob((job) => ({
+          status: 'success',
+          params: 'params' in job ? job.params : {},
+          sessionId,
+          payload: rawState.jobStatus,
+          assets,
+          files,
+          progressMessages: rawState.progressMessages,
+        }));
+      }
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      const error = new AttachJobError(errorMessage, e);
+
+      setJob({
+        status: 'error',
+        type: currentJobType.current!,
+        params: {},
+        error,
+        sessionId,
+        payload: rawState.jobStatus,
+        progressMessages: rawState.progressMessages,
+      });
+
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    const jobType = currentJobType.current ?? rawState.jobType;
+    if (!jobType) {
+      return;
+    }
 
     if (rawState.status === 'error') {
       const error = rawState.error ?? new UnknownCodegenError();
@@ -171,6 +224,7 @@ export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, childre
     <AnimaSdkContext.Provider
       value={{
         createJob,
+        attachJob,
         job,
         figmaRestApi,
       }}

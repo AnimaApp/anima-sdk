@@ -9,7 +9,9 @@ export type CommonApiError =
   | "Forbidden, no team access"
   | "Requested Usage Exceeds Limit"
   | "Too many concurrent jobs"
-  | "Invalid Anima token";
+  | "Invalid Anima token"
+  | "Job not found"
+  | "Invalid job type";
 
 /**
  * Codegen errors from the worker
