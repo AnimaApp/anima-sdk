@@ -180,7 +180,7 @@ export type GetCodeFromPromptSettings = BaseSettings & {
   language?: "typescript";
   framework: "react" | "html";
   styling: "tailwind" | "inline_styles";
-  uiLibrary?: "shadcn";
+  uiLibrary?: "shadcn" | "custom_design_system";
 };
 
 export type AttachToGenerationJobParams = {
