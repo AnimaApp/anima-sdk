@@ -5,6 +5,8 @@ import type {
 } from "./errors";
 import type { CodegenSettings, BaseSettings } from "./settings";
 
+export type JobType = "f2c" | "l2c" | "p2c";
+
 export type AnimaFiles = Record<
   string,
   {
@@ -200,7 +202,9 @@ export type SSECommonMessage<TErrorReason extends string = string> =
     }
   | { type: "aborted" }
   | { type: "done"; payload: { sessionId: string; tokenUsage: number } }
-  | { type: "error"; payload: SSEErrorPayload<TErrorReason> };
+  | { type: "error"; payload: SSEErrorPayload<TErrorReason> }
+  // "set_job_type" is sent internally by `anima-sdk` when reattaching to a job. It isn't an event sent by the Anima.
+  | { type: "set_job_type"; payload: { jobType: JobType } };
 
 export type SSEErrorPayload<Reason> = {
   errorName: string;

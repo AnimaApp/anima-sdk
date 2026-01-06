@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react';
-import type { AnimaFiles, ProgressMessage } from '@animaapp/anima-sdk';
+import type { AnimaFiles, ProgressMessage, JobType } from '@animaapp/anima-sdk';
 import { FigmaRestApi } from '@animaapp/anima-sdk';
-import { initialProgress, createJob as sdkCreateJob, attachJob as sdkAttachJob, UseAnimaParams, JobType } from './job';
+import { initialProgress, createJob as sdkCreateJob, attachJob as sdkAttachJob, UseAnimaParams } from './job';
 
 
 type Job =
@@ -26,7 +26,7 @@ type Job =
   }
   | {
     status: 'success';
-    type?: JobType;
+    type: JobType;
     params: Record<string, any>;
     sessionId: string;
     payload: Record<string, any>;
@@ -158,6 +158,7 @@ export function AnimaSdkProvider({ figmaRestApi, f2cUrl, l2cUrl, p2cUrl, jobsUrl
 
         setJob((job) => ({
           status: 'success',
+          type: rawState.jobType!,
           params: 'params' in job ? job.params : {},
           sessionId,
           payload: rawState.jobStatus,

@@ -16,12 +16,15 @@ import {
   SSEGetCodeFromWebsiteMessage,
   SSEGetCodeFromPromptMessage,
   SSEGetCodeFromFigmaMessage,
+  JobType,
 } from "./types";
 import { isNodeCodegenCompatible } from "./utils/isNodeCodegenCompatible";
 import { FigmaRestApi } from "./FigmaRestApi";
 
-const JOB_TYPE_CONVERSION_MAP: Record<string, string> = {
+const JOB_TYPE_CONVERSION_MAP: Record<string, JobType> = {
   codegen: "f2c",
+  l2c: "l2c",
+  p2c: "p2c",
 };
 
 export type Auth =
@@ -189,11 +192,11 @@ export class Anima {
       });
     }
 
-    const jobType = response.headers.get("x-anima-job-type");
-    const normalizedJobType =
-      jobType && JOB_TYPE_CONVERSION_MAP[jobType]
-        ? JOB_TYPE_CONVERSION_MAP[jobType]
-        : jobType;
+    const rawJobType = response.headers.get("x-anima-job-type");
+    const jobType = rawJobType && JOB_TYPE_CONVERSION_MAP[rawJobType];
+    if (jobType && typeof handler === "function") {
+      handler({ type: "set_job_type", payload: { jobType } } as T);
+    }
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -304,10 +307,7 @@ export class Anima {
 
               case "progress_messages_updated": {
                 typeof handler === "function"
-                  ? handler({
-                      ...data,
-                      payload: { ...data.payload, jobType: normalizedJobType },
-                    })
+                  ? handler(data)
                   : handler.onProgressMessagesUpdated?.(
                       data.payload.progressMessages
                     );
@@ -316,10 +316,7 @@ export class Anima {
 
               case "job_status_updated": {
                 typeof handler === "function"
-                  ? handler({
-                      ...data,
-                      payload: { ...data.payload, jobType: normalizedJobType },
-                    })
+                  ? handler(data)
                   : handler.onJobStatusUpdated?.(data.payload.jobStatus);
                 break;
               }

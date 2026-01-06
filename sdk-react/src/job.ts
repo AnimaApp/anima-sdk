@@ -6,6 +6,7 @@ import {
   GetLink2CodeParams,
   ProgressMessage,
   StreamCodgenMessage,
+  JobType,
 } from "@animaapp/anima-sdk";
 import { EventSource } from "eventsource";
 import { arrayBufferToBase64 } from "./utils";
@@ -13,11 +14,6 @@ import { arrayBufferToBase64 } from "./utils";
 type Status = "idle" | "pending" | "success" | "aborted" | "error";
 
 type TaskStatus = "pending" | "running" | "finished";
-
-export type JobType = "f2c" | "l2c" | "p2c";
-const JOB_TYPE_CONVERSION_MAP: Record<string, string> = {
-  codegen: "f2c",
-};
 
 export type CodegenState = {
   status: Status;
@@ -108,16 +104,6 @@ const subscribeToJobStream = ({
   state.status = "pending";
   stateUpdated({ ...state });
 
-  const normalizeJobType = (
-    jobType: string | null | undefined
-  ): JobType | null => {
-    if (!jobType) {
-      return null;
-    }
-
-    return (JOB_TYPE_CONVERSION_MAP[jobType] ?? jobType) as JobType;
-  };
-
   return new Promise<{
     result: AnimaSDKResult | null;
     error: CodegenError | null;
@@ -125,6 +111,14 @@ const subscribeToJobStream = ({
     const result: Partial<AnimaSDKResult> = {};
 
     // Add specific event listeners
+    es.addEventListener("set_job_type", (event) => {
+      const message = JSON.parse(
+        event.data
+      ) as StreamMessageByType<"set_job_type">;
+      state.jobType = message.payload.jobType;
+      stateUpdated({ ...state });
+    });
+
     es.addEventListener("start", (event) => {
       const message = JSON.parse(event.data) as StreamMessageByType<"start">;
       result.sessionId = message.sessionId;
@@ -194,7 +188,6 @@ const subscribeToJobStream = ({
       ) as StreamMessageByType<"progress_messages_updated">;
 
       state.progressMessages = message.payload.progressMessages;
-      state.jobType = normalizeJobType(message.payload.jobType);
       stateUpdated({ ...state });
     });
 
@@ -204,7 +197,6 @@ const subscribeToJobStream = ({
       ) as StreamMessageByType<"job_status_updated">;
 
       state.jobStatus = message.payload.jobStatus;
-      state.jobType = normalizeJobType(message.payload.jobType);
       stateUpdated({ ...state });
     });
 
@@ -368,17 +360,17 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
   });
 
   try {
-    const { result: r, error } = await subscribeToJobStream({
+    const { result: rawResult, error } = await subscribeToJobStream({
       es,
       lastFetchResponse,
       stateUpdated,
     });
 
-    if (error) {
+    if (error || !rawResult) {
       return { result: null, error };
     }
 
-    const result = structuredClone(r);
+    const result = structuredClone(rawResult);
     downloadResultAssets(result, initialParams);
 
     return { result, error: null };
@@ -407,16 +399,17 @@ export const attachJob = async <T extends UseAnimaParams = UseAnimaParams>(
   });
 
   try {
-    const { result: r, error } = await subscribeToJobStream({
+    const { result: rawResult, error } = await subscribeToJobStream({
       es,
       lastFetchResponse,
       stateUpdated,
     });
-    if (error) {
+
+    if (error || !rawResult) {
       return { result: null, error };
     }
 
-    const result = structuredClone(r);
+    const result = structuredClone(rawResult);
     downloadResultAssets(result, initialParams);
 
     return { result, error: null };
@@ -426,12 +419,12 @@ export const attachJob = async <T extends UseAnimaParams = UseAnimaParams>(
 };
 
 const downloadResultAssets = async <T extends UseAnimaParams = UseAnimaParams>(
-  result: Partial<AnimaSDKResult>,
+  result: AnimaSDKResult,
   params: T
 ): Promise<void> => {
   // Ideally, we should download the assets within the `assets_uploaded` event handler, since it'll improve the performance.
   // But for some reason, it doesn't work. So, we download the assets here.
-  if (params.assetsStorage?.strategy === "local" && result?.assets?.length) {
+  if (params.assetsStorage?.strategy === "local" && result.assets?.length) {
     const { filePath } = getAssetsLocalStrategyParams(params.assetsStorage);
 
     const downloadAssetsPromises = result.assets.map(

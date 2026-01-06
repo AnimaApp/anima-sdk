@@ -345,11 +345,9 @@ The Anima React SDK is hosted on NPM and you need the base package as well to us
 </AnimaSdkProvider>
 ```
 
-The `f2cUrl`, `l2cUrl`, and `p2cUrl` props are optional, but you must configure at least one to use the SDK.
+The `f2cUrl`, `l2cUrl`, and `p2cUrl` props are optional, but you must configure at least one to use the SDK. You should use implement this endpoint on your backend by calling `createCodegenResponseEventStream`, `createCodeFromWebsiteResponseEventStream` and `createCodeFromPromptResponseEventStream` respectively from the `anima-sdk` package.
 
-`jobsUrl` is required only when you want to attach to existing jobs. This route defines an authenticated endpoint that accepts a `sessionId` as a route parameter, resolves the user’s active job, and returns the job response.
-
-These props define the API endpoints for creating new code generation jobs or attaching to existing code generation jobs.
+`jobsUrl` is required only when you want to attach to existing jobs by calling `attachJob` from `anima-sdk-react`. This route defines an authenticated endpoint that accepts a `sessionId` as a route parameter, resolves the user’s active job, and returns the job response. You should use implement this endpoint on your backend by calling `attachToGenerationJobResponseEventStream` from the `anima-sdk` package.
 
 2. **Create a code generation job** - Use the hook to start new jobs:
 
