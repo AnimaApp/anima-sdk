@@ -5,21 +5,27 @@ import { CodegenError, CodegenRouteErrorReason } from "./errors";
 import { validateSettings } from "./settings";
 import {
   AnimaSDKResult,
+  AttachToGenerationJobParams,
   GetCodeFromWebsiteHandler,
   GetCodeFromWebsiteParams,
   GetCodeFromPromptHandler,
   GetCodeFromPromptParams,
   GetCodeHandler,
   GetCodeParams,
-  GetLink2CodeHandler,
   GetLink2CodeParams,
-  SSECodegenMessage,
   SSEGetCodeFromWebsiteMessage,
   SSEGetCodeFromPromptMessage,
-  SSEL2CMessage,
+  SSEGetCodeFromFigmaMessage,
+  JobType,
 } from "./types";
 import { isNodeCodegenCompatible } from "./utils/isNodeCodegenCompatible";
 import { FigmaRestApi } from "./FigmaRestApi";
+
+const JOB_TYPE_CONVERSION_MAP: Record<string, JobType> = {
+  codegen: "f2c",
+  l2c: "l2c",
+  p2c: "p2c",
+};
 
 export type Auth =
   | { token: string; teamId: string } // for Anima user, it's mandatory to have an associated team
@@ -105,12 +111,16 @@ export class Anima {
    * @returns The result of the generation process
    */
   async #processGenerationRequest<
-    T extends SSECodegenMessage | SSEL2CMessage | SSEGetCodeFromPromptMessage,
+    T extends
+      | SSEGetCodeFromFigmaMessage
+      | SSEGetCodeFromWebsiteMessage
+      | SSEGetCodeFromPromptMessage,
   >(
+    method: "GET" | "POST",
     endpoint: string,
     requestJson: object,
     handler: ((message: T) => void) | Record<string, any>,
-    messageType: "codegen" | "l2c" | "p2c",
+    messageType?: "codegen" | "l2c" | "p2c",
     signal?: AbortSignal
   ): Promise<AnimaSDKResult> {
     if (this.hasAuth() === false) {
@@ -118,20 +128,25 @@ export class Anima {
     }
 
     const result: Partial<AnimaSDKResult> = {};
-
-    const requestBody = gzip(JSON.stringify(requestJson));
-
-    const response = await fetch(`${this.#apiBaseAddress}${endpoint}`, {
-      method: "POST",
+    const init: RequestInit = {
+      method,
       headers: {
         ...this.headers,
         Accept: "text/event-stream",
+      },
+      signal,
+    };
+    if (method === "POST") {
+      const requestBody = gzip(JSON.stringify(requestJson));
+      init.body = requestBody;
+      init.headers = {
+        ...(init.headers as HeadersInit),
         "Content-Encoding": "gzip",
         "Content-Type": "application/json",
-      },
-      body: requestBody,
-      signal,
-    });
+      };
+    }
+
+    const response = await fetch(`${this.#apiBaseAddress}${endpoint}`, init);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -175,6 +190,12 @@ export class Anima {
         reason: "Response body is null",
         status: response.status,
       });
+    }
+
+    const rawJobType = response.headers.get("x-anima-job-type");
+    const jobType = rawJobType && JOB_TYPE_CONVERSION_MAP[rawJobType];
+    if (jobType && typeof handler === "function") {
+      handler({ type: "set_job_type", payload: { jobType } } as T);
     }
 
     const reader = response.body.getReader();
@@ -403,7 +424,8 @@ export class Anima {
       createSession: params.createSession,
     };
 
-    return this.#processGenerationRequest<SSECodegenMessage>(
+    return this.#processGenerationRequest<SSEGetCodeFromFigmaMessage>(
+      "POST",
       "/v1/codegen",
       requestJson,
       handler,
@@ -471,6 +493,7 @@ export class Anima {
     };
 
     return this.#processGenerationRequest<SSEGetCodeFromWebsiteMessage>(
+      "POST",
       "/v1/l2c",
       requestJson,
       handler,
@@ -541,6 +564,7 @@ export class Anima {
     };
 
     return this.#processGenerationRequest<SSEGetCodeFromPromptMessage>(
+      "POST",
       "/v1/p2c",
       requestJson,
       handler,
@@ -554,7 +578,7 @@ export class Anima {
    */
   async generateLink2Code(
     params: GetLink2CodeParams,
-    handler: GetLink2CodeHandler = {},
+    handler: GetCodeFromWebsiteHandler = {},
     signal?: AbortSignal
   ) {
     let tracking = params.tracking;
@@ -570,11 +594,34 @@ export class Anima {
       params: params.params,
     };
 
-    return this.#processGenerationRequest<SSEL2CMessage>(
+    return this.#processGenerationRequest<SSEGetCodeFromWebsiteMessage>(
+      "POST",
       "/v1/l2c",
       requestJson,
       handler,
       "l2c",
+      signal
+    );
+  }
+
+  async attachToGenerationJob<
+    T extends
+      | SSEGetCodeFromFigmaMessage
+      | SSEGetCodeFromWebsiteMessage
+      | SSEGetCodeFromPromptMessage,
+  >(
+    params: AttachToGenerationJobParams,
+    handler: ((message: T) => void) | Record<string, any> = {},
+    signal?: AbortSignal
+  ) {
+    const requestJson = {};
+    const messageType = undefined;
+    return this.#processGenerationRequest<T>(
+      "GET",
+      `/v1/jobs/${params.sessionId}`,
+      requestJson,
+      handler,
+      messageType,
       signal
     );
   }

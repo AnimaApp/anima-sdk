@@ -5,6 +5,8 @@ import type {
 } from "./errors";
 import type { CodegenSettings, BaseSettings } from "./settings";
 
+export type JobType = "f2c" | "l2c" | "p2c";
+
 export type AnimaFiles = Record<
   string,
   {
@@ -181,22 +183,28 @@ export type GetCodeFromPromptSettings = BaseSettings & {
   uiLibrary?: "shadcn";
 };
 
+export type AttachToGenerationJobParams = {
+  sessionId: string;
+};
+
 // SSE Messages
 
 export type SSECommonMessage<TErrorReason extends string = string> =
   | { type: "queueing"; payload: { sessionId: string } }
   | {
       type: "progress_messages_updated";
-      payload: { progressMessages: ProgressMessage[] };
+      payload: { progressMessages: ProgressMessage[]; jobType?: string | null };
     }
   | {
       type: "job_status_updated";
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      payload: { jobStatus: Record<string, any> };
+      payload: { jobStatus: Record<string, any>; jobType?: string | null };
     }
   | { type: "aborted" }
   | { type: "done"; payload: { sessionId: string; tokenUsage: number } }
-  | { type: "error"; payload: SSEErrorPayload<TErrorReason> };
+  | { type: "error"; payload: SSEErrorPayload<TErrorReason> }
+  // "set_job_type" is sent internally by `anima-sdk` when reattaching to a job. It isn't an event sent by the Anima.
+  | { type: "set_job_type"; payload: { jobType: JobType } };
 
 export type SSEErrorPayload<Reason> = {
   errorName: string;

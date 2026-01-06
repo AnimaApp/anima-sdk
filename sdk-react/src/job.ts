@@ -6,6 +6,7 @@ import {
   GetLink2CodeParams,
   ProgressMessage,
   StreamCodgenMessage,
+  JobType,
 } from "@animaapp/anima-sdk";
 import { EventSource } from "eventsource";
 import { arrayBufferToBase64 } from "./utils";
@@ -27,6 +28,7 @@ export type CodegenState = {
   jobSessionId: string | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   jobStatus: Record<string, any>;
+  jobType: JobType | null;
 };
 
 export const initialProgress: CodegenState = {
@@ -41,6 +43,7 @@ export const initialProgress: CodegenState = {
   },
   jobSessionId: null,
   jobStatus: {},
+  jobType: null,
 };
 
 type StreamMessageByType<T extends StreamCodgenMessage["type"]> = Extract<
@@ -88,53 +91,34 @@ const getAssetsLocalStrategyParams = (
   };
 };
 
-export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
-  url: string,
-  method: string,
-  params: T,
-  stateUpdated: (state: CodegenState) => void
-) => {
+const subscribeToJobStream = ({
+  es,
+  lastFetchResponse,
+  stateUpdated,
+}: {
+  es: EventSource;
+  lastFetchResponse: ReturnType<typeof fetch> | undefined;
+  stateUpdated: (state: CodegenState) => void;
+}) => {
   const state = structuredClone(initialProgress);
   state.status = "pending";
   stateUpdated({ ...state });
 
-  const initialParams = structuredClone(params);
-
-  if (params.assetsStorage?.strategy === "local") {
-    const { referencePath } = getAssetsLocalStrategyParams(
-      params.assetsStorage
-    );
-
-    params.assetsStorage = {
-      strategy: "external",
-      url: referencePath,
-    };
-  }
-
-  // TODO: We have two workarounds here because of limitations on the `eventsource` package:
-  // 1. We need to use the `fetch` function from the `EventSource` constructor to send the request with the correct method and body (https://github.com/EventSource/eventsource/issues/316#issuecomment-2525315835).
-  // 2. We need to store the last fetch response to handle errors to read its body response, since it isn't expoted by the package (https://github.com/EventSource/eventsource/blob/8aa7057bccd7fb819372a3b2c1292e7b53424d52/src/EventSource.ts#L348-L376)
-  // We might need to use other library, or do it from our self, to improve the code quality.
-  let lastFetchResponse: ReturnType<typeof fetch>;
-  const es = new EventSource(url, {
-    fetch: (url, init) => {
-      lastFetchResponse = fetch(url, {
-        ...init,
-        method,
-        body: JSON.stringify(params),
-      });
-
-      return lastFetchResponse;
-    },
-  });
-
-  const promise = new Promise<{
+  return new Promise<{
     result: AnimaSDKResult | null;
     error: CodegenError | null;
   }>((resolve, reject) => {
     const result: Partial<AnimaSDKResult> = {};
 
     // Add specific event listeners
+    es.addEventListener("set_job_type", (event) => {
+      const message = JSON.parse(
+        event.data
+      ) as StreamMessageByType<"set_job_type">;
+      state.jobType = message.payload.jobType;
+      stateUpdated({ ...state });
+    });
+
     es.addEventListener("start", (event) => {
       const message = JSON.parse(event.data) as StreamMessageByType<"start">;
       result.sessionId = message.sessionId;
@@ -243,6 +227,10 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
 
     // TODO: For some reason, we receive errors even after the `done` event is triggered.
     es.addEventListener("error", async (error: ErrorEvent | MessageEvent) => {
+      if (!lastFetchResponse) {
+        return;
+      }
+
       // Check if the fetch is ok.
       // If it is't, then the request failed before creating the job and we should terminate the request.
       const response = await lastFetchResponse;
@@ -338,54 +326,132 @@ export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
       resolve({ result: result as AnimaSDKResult, error: null });
     });
   });
+};
+
+export const createJob = async <T extends UseAnimaParams = UseAnimaParams>(
+  url: string,
+  method: string,
+  params: T,
+  stateUpdated: (state: CodegenState) => void
+) => {
+  const initialParams = structuredClone(params);
+
+  if (params.assetsStorage?.strategy === "local") {
+    const { referencePath } = getAssetsLocalStrategyParams(
+      params.assetsStorage
+    );
+    params.assetsStorage = { strategy: "external", url: referencePath };
+  }
+
+  // TODO: We have two workarounds here because of limitations on the `eventsource` package:
+  // 1. We need to use the `fetch` function from the `EventSource` constructor to send the request with the correct method and body (https://github.com/EventSource/eventsource/issues/316#issuecomment-2525315835).
+  // 2. We need to store the last fetch response to handle errors to read its body response, since it isn't expoted by the package (https://github.com/EventSource/eventsource/blob/8aa7057bccd7fb819372a3b2c1292e7b53424d52/src/EventSource.ts#L348-L376)
+  // We might need to use other library, or do it from our self, to improve the code quality.
+  let lastFetchResponse: ReturnType<typeof fetch> | undefined;
+  const es = new EventSource(url, {
+    fetch: (url, init) => {
+      lastFetchResponse = fetch(url, {
+        ...init,
+        method,
+        body: JSON.stringify(params),
+      });
+      return lastFetchResponse;
+    },
+  });
 
   try {
-    const { result: r, error } = await promise;
+    const { result: rawResult, error } = await subscribeToJobStream({
+      es,
+      lastFetchResponse,
+      stateUpdated,
+    });
 
-    const result = structuredClone(r);
+    if (error || !rawResult) {
+      return { result: null, error };
+    }
 
-    // Ideally, we should download the assets within the `assets_uploaded` event handler, since it'll improve the performance.
-    // But for some reason, it doesn't work. So, we download the assets here.
-    if (
-      initialParams.assetsStorage?.strategy === "local" &&
-      result?.assets?.length
-    ) {
-      const { filePath } = getAssetsLocalStrategyParams(
-        initialParams.assetsStorage
-      );
+    const result = structuredClone(rawResult);
+    downloadResultAssets(result, initialParams);
 
-      const downloadAssetsPromises = result.assets.map(async (asset) => {
+    return { result, error: null };
+  } finally {
+    es.close();
+  }
+};
+
+export const attachJob = async <T extends UseAnimaParams = UseAnimaParams>(
+  url: string,
+  params: T,
+  stateUpdated: (state: CodegenState) => void
+) => {
+  const initialParams = structuredClone(params);
+
+  let lastFetchResponse: ReturnType<typeof fetch> | undefined;
+  const es = new EventSource(url, {
+    fetch: (url, init) => {
+      lastFetchResponse = fetch(url, {
+        ...init,
+        method: "POST",
+        body: JSON.stringify(params),
+      });
+      return lastFetchResponse;
+    },
+  });
+
+  try {
+    const { result: rawResult, error } = await subscribeToJobStream({
+      es,
+      lastFetchResponse,
+      stateUpdated,
+    });
+
+    if (error || !rawResult) {
+      return { result: null, error };
+    }
+
+    const result = structuredClone(rawResult);
+    downloadResultAssets(result, initialParams);
+
+    return { result, error: null };
+  } finally {
+    es.close();
+  }
+};
+
+const downloadResultAssets = async <T extends UseAnimaParams = UseAnimaParams>(
+  result: AnimaSDKResult,
+  params: T
+): Promise<void> => {
+  // Ideally, we should download the assets within the `assets_uploaded` event handler, since it'll improve the performance.
+  // But for some reason, it doesn't work. So, we download the assets here.
+  if (params.assetsStorage?.strategy === "local" && result.assets?.length) {
+    const { filePath } = getAssetsLocalStrategyParams(params.assetsStorage);
+
+    const downloadAssetsPromises = result.assets.map(
+      async (asset: { name: string; url: string }) => {
         const response = await fetch(asset.url);
         const buffer = await response.arrayBuffer();
         return {
           assetName: asset.name,
           base64: arrayBufferToBase64(buffer),
         };
-      });
+      }
+    );
 
-      const assets = await Promise.allSettled(downloadAssetsPromises);
-      for (const assetPromise of assets) {
-        const assetsList: Record<string, string> = {};
-        if (assetPromise.status === "fulfilled") {
-          const { assetName, base64 } = assetPromise.value;
+    const assets = await Promise.allSettled(downloadAssetsPromises);
+    for (const assetPromise of assets) {
+      const assetsList: Record<string, string> = {};
+      if (assetPromise.status === "fulfilled") {
+        const { assetName, base64 } = assetPromise.value;
 
-          assetsList[assetName] = base64;
+        assetsList[assetName] = base64;
 
-          const assetPath = filePath ? `${filePath}/${assetName}` : assetName;
-          result.files[assetPath] = {
-            content: base64,
-            isBinary: true,
-          };
-        }
+        const assetPath = filePath ? `${filePath}/${assetName}` : assetName;
+        result.files[assetPath] = {
+          content: base64,
+          isBinary: true,
+        };
       }
     }
-
-    if (error) {
-      return { result: null, error };
-    }
-
-    return { result, error };
-  } finally {
-    es.close();
   }
 };

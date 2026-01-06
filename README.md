@@ -339,14 +339,15 @@ The Anima React SDK is hosted on NPM and you need the base package as well to us
   f2cUrl="/api/anima/f2c"
   l2cUrl="/api/anima/l2c"
   p2cUrl="/api/anima/p2c"
+  jobsUrl="/api/anima/jobs"
 >
   ...
 </AnimaSdkProvider>
 ```
 
-The `f2cUrl`, `l2cUrl`, and `p2cUrl` props are optional, but you must configure at least one to use the SDK.
+The `f2cUrl`, `l2cUrl`, and `p2cUrl` props are optional, but you must configure at least one to use the SDK. You should use implement this endpoint on your backend by calling `createCodegenResponseEventStream`, `createCodeFromWebsiteResponseEventStream` and `createCodeFromPromptResponseEventStream` respectively from the `anima-sdk` package.
 
-These props define the API endpoints for creating new code generation jobs.
+`jobsUrl` is required only when you want to attach to existing jobs by calling `attachJob` from `anima-sdk-react`. This route defines an authenticated endpoint that accepts a `sessionId` as a route parameter, resolves the user’s active job, and returns the job response. You should use implement this endpoint on your backend by calling `attachToGenerationJobResponseEventStream` from the `anima-sdk` package.
 
 2. **Create a code generation job** - Use the hook to start new jobs:
 
@@ -376,6 +377,20 @@ const { job } = useAnimaSDK();
 
 * **Short rate limit**: Use [this design](https://www.figma.com/design/Y1TdquDVUkEVetLzKOXAp8/Mock-Design---API---Short-Rate-Limit-Exceeded?node-id=1-5&t=QP3FD7yrFORTuqtS-11) to simulate a 10-second wait.
 * **Rate limit exceeded**: Use [this design](https://www.figma.com/design/AwhyxD3hSAcPDxedRjckbs/Mock-Design---API---Long-Rate-Limit-Exceeded?node-id=1-2&t=uLYu8I8kjW0KFPhh-11) to trigger a rate limit exceeded exception. It'll abort the code generation.
+
+**Note 3:** Use the hook to attach to existing jobs:
+
+```ts
+const { attachJob } = useAnimaSDK();
+
+const onClick = async () => {
+  await attachJob('example-job-id', settingsOptions)
+}
+```
+
+This calls the endpoint defined in the `jobsUrl` prop and begins reading updates via SSE.
+
+* **Note:** This method throws a `AttachJobError` if job attachment fails (e.g., 404 error).
 
 ## Configuration Options
 
