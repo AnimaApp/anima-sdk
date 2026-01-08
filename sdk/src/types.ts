@@ -230,7 +230,7 @@ export type SSEGetCodeFromFigmaMessage =
       type: "assets_list";
       payload: { assets: Array<{ name: string; url: string }> };
     }
-  | { type: "snapshots_urls"; payload: { urls: string[] } };
+  | { type: "snapshots_urls"; payload: { urls: Record<string, string> } };
 
 export type SSEGetCodeFromFigmaMessageErrorPayload =
   SSEErrorPayload<GetCodeFromFigmaErrorReason>;
