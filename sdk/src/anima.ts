@@ -551,6 +551,7 @@ export class Anima {
       assetsStorage: params.assetsStorage,
       params: {
         prompt: params.prompt,
+        guidelines: params.guidelines,
         images: params.images,
         conventions: {
           language: params.settings.language,

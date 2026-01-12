@@ -146,6 +146,7 @@ export type GetCodeFromWebsiteSettings = BaseSettings & {
 
 export type GetCodeFromPromptParams = {
   prompt: string;
+  guidelines?: string;
   images?: Array<{ url: string }>;
   assetsStorage?: AssetsStorage;
   settings: GetCodeFromPromptSettings;

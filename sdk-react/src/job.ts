@@ -3,10 +3,10 @@ import {
   CodegenError,
   GetCodeFromWebsiteParams,
   GetCodeParams,
-  GetLink2CodeParams,
   ProgressMessage,
   StreamCodgenMessage,
   JobType,
+  GetCodeFromPromptParams,
 } from "@animaapp/anima-sdk";
 import { EventSource } from "eventsource";
 import { arrayBufferToBase64 } from "./utils";
@@ -61,14 +61,15 @@ export type UseAnimaParams =
   | (Omit<GetCodeParams, "assetsStorage"> & {
       assetsStorage?: GetCodeParams["assetsStorage"] | LocalAssetsStorage;
     })
+  | (Omit<GetCodeFromPromptParams, "assetsStorage"> & {
+      assetsStorage?:
+        | GetCodeFromPromptParams["assetsStorage"]
+        | LocalAssetsStorage;
+    })
   | (Omit<GetCodeFromWebsiteParams, "assetsStorage"> & {
       assetsStorage?:
         | GetCodeFromWebsiteParams["assetsStorage"]
         | LocalAssetsStorage;
-    })
-  | (Omit<GetLink2CodeParams, "assetsStorage"> & {
-      assetsStorage?: GetLink2CodeParams["assetsStorage"] | LocalAssetsStorage;
-      /** @deprecated Use GetCodeFromWebsiteParams instead. This will be removed in a future version. */
     });
 
 const getAssetsLocalStrategyParams = (
