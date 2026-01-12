@@ -1,6 +1,6 @@
 {
   "name": "@animaapp/anima-sdk",
-  "version": "0.16.0-wip2",
+  "version": "0.16.0-wip3",
   "type": "module",
   "description": "Anima's JavaScript utilities library",
   "author": "Anima App, Inc.",
