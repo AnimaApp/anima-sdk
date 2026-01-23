@@ -14,7 +14,7 @@ export default defineConfig({
     target: "es6",
     sourcemap: true,
     rollupOptions: {
-      external: ["react", "@animaapp/anima-sdk"],
+      external: ["react", "react/jsx-runtime", "@animaapp/anima-sdk"],
     },
   },
   plugins: [
