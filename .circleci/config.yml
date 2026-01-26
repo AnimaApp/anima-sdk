@@ -43,7 +43,7 @@ jobs:
             echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
       - run:
           name: Publish to NPM
-          command: pnpm publish
+          command: pnpm exec changeset publish --no-git-checks
       - run:
           name: Set .npmrc for GitHub Packages publish
           command: |
@@ -53,4 +53,4 @@ jobs:
             echo "//npm.pkg.github.com/:_authToken=$GITHUB_PACKAGE_TOKEN" >> .npmrc
       - run:
           name: Publish to GitHub Packages
-          command: pnpm publish
+          command: pnpm exec changeset publish --no-git-checks
