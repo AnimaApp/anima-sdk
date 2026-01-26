@@ -6,9 +6,9 @@ workflows:
       - lint
       - publish:
           context: anima-prod
-          # filters:
-          #   branches:
-          #     only: main
+          filters:
+            branches:
+              only: main
 
 jobs:
   lint:
