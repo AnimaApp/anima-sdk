@@ -74,6 +74,7 @@ export type CodegenSettings = BaseSettings & {
   url?: string;
   prompt?: string;
   images?: Array<{ url: string }>;
+  designSystemId?: string;
 };
 
 export const validateSettings = (obj: unknown): CodegenSettings => {
