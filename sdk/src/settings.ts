@@ -34,7 +34,7 @@ const CodegenSettingsSchema = z
         enableAutoSplit: z.boolean().optional(),
         autoSplitThreshold: z.number().optional(),
         url: z.string().url().optional(),
-        codegenSettings: z.record(z.unknown()).optional(),
+        codegenSettings: z.record(z.string(), z.unknown()).optional(),
       }),
       z.object({
         framework: z.literal("html"),
