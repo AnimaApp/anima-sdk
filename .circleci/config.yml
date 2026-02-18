@@ -38,7 +38,7 @@ jobs:
             pnpm install
       - run:
           name: Run tests
-          command: pnpm test
+          command: pnpm --filter @animaapp/anima-sdk test
 
   publish:
     docker:
