@@ -4,6 +4,7 @@ workflows:
   main-workflow:
     jobs:
       - lint
+      - test
       - publish:
           context: anima-prod
           filters:
@@ -24,6 +25,20 @@ jobs:
       - run:
           name: Run linting
           command: pnpm lint
+
+  test:
+    docker:
+      - image: cimg/node:22.19.0
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            corepack enable || sudo corepack enable
+            pnpm install
+      - run:
+          name: Run tests
+          command: pnpm --filter @animaapp/anima-sdk test
 
   publish:
     docker:
