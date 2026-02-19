@@ -109,6 +109,7 @@ export type GetCodeFromWebsiteParams = {
   webhookUrl?: string;
   prompt?: string;
   images?: Array<{ url: string }>;
+  dsId?: string;
 
   // Experimental options, will change in the future.
   experimental_useNewReactEngine?: boolean;
@@ -182,6 +183,7 @@ export type GetCodeFromPromptSettings = BaseSettings & {
   framework: "react" | "html";
   styling: "tailwind" | "inline_styles";
   uiLibrary?: "shadcn" | "custom_design_system";
+  dsId?: string;
 };
 
 export type AttachToGenerationJobParams = {
