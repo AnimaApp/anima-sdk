@@ -417,6 +417,7 @@ export class Anima {
       enableDisplayDataId: settings.enableDisplayDataId,
       enableDisplayDataName: settings.enableDisplayDataName,
       codegenSettings: settings.codegenSettings,
+      dsId: settings.designSystemId,
       webhookUrl: params.webhookUrl,
       prompt: params.prompt,
       images: params.images,
@@ -478,6 +479,7 @@ export class Anima {
       assetsStorage: params.assetsStorage,
       prompt: params.prompt,
       images: params.images,
+      dsId: params.dsId,
       params: {
         input,
         conventions: {
@@ -559,6 +561,7 @@ export class Anima {
           styling: params.settings.styling,
           uiLibrary: params.settings.uiLibrary,
         },
+        dsId: params.settings.dsId,
         ...(params.settings.codegenSettings ?? {}),
       },
       webhookUrl: params.webhookUrl,
