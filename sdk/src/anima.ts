@@ -416,6 +416,7 @@ export class Anima {
       enableAnimationsPreset: settings.enableAnimationsPreset,
       enableDisplayDataId: settings.enableDisplayDataId,
       enableDisplayDataName: settings.enableDisplayDataName,
+      enableDisplayDataVariant: settings.enableDisplayDataVariant,
       codegenSettings: settings.codegenSettings,
       dsId: settings.designSystemId,
       webhookUrl: params.webhookUrl,

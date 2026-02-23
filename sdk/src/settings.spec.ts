@@ -36,6 +36,7 @@ describe("# validateSettings", () => {
         disableMarkedForExport: false,
         enableDisplayDataId: true,
         enableDisplayDataName: true,
+        enableDisplayDataVariant: true,
       };
 
       const result = validateSettings(settings);
