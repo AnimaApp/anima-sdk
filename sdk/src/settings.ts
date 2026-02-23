@@ -7,6 +7,7 @@ const CodegenSettingsSchema = z
     allowAutoSelectFirstNode: z.boolean().optional().default(true),
     enableDisplayDataId: z.boolean().optional(),
     enableDisplayDataName: z.boolean().optional(),
+    enableDisplayDataVariant: z.boolean().optional(),
   })
   .and(
     z.union([
@@ -72,6 +73,7 @@ export type CodegenSettings = BaseSettings & {
   enableAnimationsPreset?: boolean;
   enableDisplayDataId?: boolean;
   enableDisplayDataName?: boolean;
+  enableDisplayDataVariant?: boolean;
   url?: string;
   prompt?: string;
   images?: Array<{ url: string }>;
