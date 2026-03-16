@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react';
-import type { AnimaFiles, ProgressMessage, JobType } from '@animaapp/anima-sdk';
+import type { AnimaFiles, ProgressMessage, JobType, CodegenError } from '@animaapp/anima-sdk';
 import { FigmaRestApi } from '@animaapp/anima-sdk';
 import { initialProgress, createJob as sdkCreateJob, attachJob as sdkAttachJob, UseAnimaParams } from './job';
 
@@ -11,7 +11,7 @@ type Job =
     status: 'error';
     type: JobType;
     params: Record<string, any>;
-    error: CreateJobError;
+    error: CreateJobError | CodegenError;
     sessionId: string | null;
     payload: Record<string, any>;
     progressMessages: ProgressMessage[];

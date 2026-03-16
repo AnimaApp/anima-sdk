@@ -179,10 +179,11 @@ const subscribeToJobStream = ({
       }
 
       if (message.payload.status === "failure") {
-        const errorContent = (message.payload as any).files?.error?.content;
+        const errorContent = message.payload.files?.error?.content;
         const codegenError = new CodegenError({
           name: "Generation failed",
-          reason: errorContent || "Code generation failed",
+          reason: "Code generation failed",
+          detail: errorContent
         });
 
         state.status = "error";
