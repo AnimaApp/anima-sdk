@@ -178,6 +178,24 @@ const subscribeToJobStream = ({
         result.files = message.payload.files;
       }
 
+      if (message.payload.status === "failure") {
+        const errorContent = (message.payload as any).files?.error?.content;
+        const codegenError = new CodegenError({
+          name: "Generation failed",
+          reason: errorContent || "Code generation failed",
+        });
+
+        state.status = "error";
+        state.error = codegenError;
+        stateUpdated({ ...state });
+
+        resolve({
+          result: null,
+          error: codegenError,
+        });
+        return;
+      }
+
       state.tasks.codeGeneration.progress = message.payload.progress;
       state.tasks.codeGeneration.status = "running";
       stateUpdated({ ...state });

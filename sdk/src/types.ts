@@ -21,7 +21,7 @@ export type ProgressMessage = {
   title: string;
   subtitle?: string;
   body?: string;
-  status: "success" | "running";
+  status: "success" | "running" | "failure";
 };
 
 export type BaseResult = {
