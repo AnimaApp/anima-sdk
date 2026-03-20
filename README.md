@@ -107,7 +107,7 @@ console.log(files); // High-quality React code from your website!
 
 When you need to generate code from non-public websites (such as internal dashboards), the Anima SDK supports MHTML payloads. These can be generated using [Anima's Website Importer Chrome extension](https://chromewebstore.google.com/detail/anima-website-importer/paddhneaanoeljlmdepnheehdkaegblo).
 
-Simply pass the `mhtml` parameter instead of the `url` parameter to the `generateCodeFromWebsite` method:
+Simply pass the `mhtmlUrl` parameter instead of the `url` parameter to the `generateCodeFromWebsite` method:
 
 ```ts
 import { Anima } from "@animaapp/anima-sdk";
@@ -120,7 +120,7 @@ const anima = new Anima({
 });
 
 const { files } = await anima.generateCodeFromWebsite({
-  mhtml: "... mhtml payload ...",
+  mhtmlUrl: "https://example.com/path/to/file.mhtml",
   settings: {
     framework: "react",
     language: "typescript",
