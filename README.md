@@ -10,6 +10,8 @@ The Anima SDK enables seamless code generation from multiple sources:
 * **Websites** → Convert websites from URLs or MHTML payloads into high-quality code.
 * **Prompts** (Early Preview) → Generate a webapp from natural language descriptions
 
+**Converting non-public websites into code, using mhtml or other  ways  requires a specific license from Anima, please contact us.**
+
 ## Setup Overview
 
 We provide two packages for API integration: `anima-sdk` and `anima-sdk-react`.
