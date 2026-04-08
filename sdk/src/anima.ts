@@ -563,6 +563,7 @@ export class Anima {
           uiLibrary: params.settings.uiLibrary,
         },
         dsId: params.settings.dsId,
+        fastMode: params.settings.fastMode,
         ...(params.settings.codegenSettings ?? {}),
       },
       webhookUrl: params.webhookUrl,
