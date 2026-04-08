@@ -21,7 +21,7 @@ export type ProgressMessage = {
   title: string;
   subtitle?: string;
   body?: string;
-  status: "success" | "running";
+  status: "success" | "running" | "failure";
 };
 
 export type BaseResult = {
@@ -100,6 +100,7 @@ export type GeneratingCodePayload = {
 
 export type GetCodeFromWebsiteParams = {
   url?: string;
+  /** @deprecated Use `mhtmlUrl` instead. */
   mhtml?: string;
   mhtmlUrl?: string;
 

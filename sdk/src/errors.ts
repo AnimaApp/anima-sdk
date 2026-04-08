@@ -10,7 +10,8 @@ export type CommonApiError =
   | "Requested Usage Exceeds Limit"
   | "Too many concurrent jobs"
   | "Invalid Anima token"
-  | "Job not found";
+  | "Job not found"
+  | "Code generation failed";
 
 /**
  * Codegen errors from the worker
