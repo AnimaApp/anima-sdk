@@ -185,6 +185,7 @@ export type GetCodeFromPromptSettings = BaseSettings & {
   styling: "tailwind" | "inline_styles";
   uiLibrary?: "shadcn" | "custom_design_system";
   dsId?: string;
+  fastMode?: boolean;
 };
 
 export type AttachToGenerationJobParams = {
