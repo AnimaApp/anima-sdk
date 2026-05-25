@@ -111,9 +111,16 @@ export type GetCodeFromWebsiteParams = {
   prompt?: string;
   images?: Array<{ url: string }>;
   dsId?: string;
+  htmlOptimizations?: GetCodeFromWebsiteHTMLOptimizations;
 
   // Experimental options, will change in the future.
   experimental_useNewReactEngine?: boolean;
+};
+
+export type GetCodeFromWebsiteHTMLOptimizations = {
+  extractInlineAssets?: boolean;
+  pruneComputedCSSNoise?: boolean;
+  factorRepeatedCSSDeclarations?: boolean;
 };
 
 export type GetCodeFromWebsiteHandler =
@@ -142,7 +149,7 @@ export type GetCodeFromWebsiteHandler =
 export type GetCodeFromWebsiteSettings = BaseSettings & {
   language?: "typescript";
   framework: "react" | "html";
-  styling: "tailwind" | "inline_styles";
+  styling: "tailwind" | "inline_styles" | "vanilla_css";
   uiLibrary?: "shadcn";
 };
 
@@ -301,7 +308,11 @@ export type L2CParamsLanguage = "typescript";
 /**
  * @deprecated This type is deprecated and will be removed soon.
  */
-export type L2CParamsStyling = "tailwind" | "inline-styles";
+export type L2CParamsStyling =
+  | "tailwind"
+  | "inline-styles"
+  | "inline_styles"
+  | "vanilla_css";
 
 /**
  * @deprecated This type is deprecated and will be removed soon.
@@ -350,6 +361,7 @@ export type L2CParams = {
   conventions: L2CParamsConvention;
   assetsStorage: L2CParamsAssetsStorage;
   viewports?: Array<"desktop" | "tablet" | "mobile">;
+  htmlOptimizations?: GetCodeFromWebsiteHTMLOptimizations;
 };
 
 /**
