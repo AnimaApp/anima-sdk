@@ -492,6 +492,7 @@ export class Anima {
           type: "bundled",
         },
         engine,
+        htmlOptimizations: params.htmlOptimizations,
       },
     };
 
