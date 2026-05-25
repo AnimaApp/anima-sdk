@@ -52,10 +52,14 @@ jobs:
             pnpm install
             pnpm run build
       - run:
-          name: Set .npmrc for NPM publish
+          name: Create NPM publish config
           command: |
-            echo "@animaapp:registry=https://registry.npmjs.org" >> .npmrc
-            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
+            {
+              echo "registry=https://registry.npmjs.org/"
+              echo "@animaapp:registry=https://registry.npmjs.org/"
+              echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}"
+              echo "always-auth=true"
+            } > /tmp/npmjs.npmrc
       - run:
           name: Publish to NPM
           command: |
@@ -64,23 +68,25 @@ jobs:
               package_name="$(node -p "require('./${package_dir}/package.json').name")"
               package_version="$(node -p "require('./${package_dir}/package.json').version")"
 
-              if npm view "${package_name}@${package_version}" version --registry=https://registry.npmjs.org >/dev/null 2>&1; then
+              if npm --userconfig=/tmp/npmjs.npmrc view "${package_name}@${package_version}" version >/dev/null 2>&1; then
                 echo "${package_name}@${package_version} already exists on NPM; skipping"
                 return
               fi
 
-              npm publish "./${package_dir}" --access public --registry=https://registry.npmjs.org
+              npm --userconfig=/tmp/npmjs.npmrc publish "./${package_dir}" --access public
             }
 
             publish_if_missing sdk
             publish_if_missing sdk-react
       - run:
-          name: Set .npmrc for GitHub Packages publish
+          name: Create GitHub Packages publish config
           command: |
-            rm .npmrc
-
-            echo "@animaapp:registry=https://npm.pkg.github.com" >> .npmrc
-            echo "//npm.pkg.github.com/:_authToken=$GITHUB_PACKAGE_TOKEN" >> .npmrc
+            {
+              echo "registry=https://npm.pkg.github.com/"
+              echo "@animaapp:registry=https://npm.pkg.github.com/"
+              echo "//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGE_TOKEN}"
+              echo "always-auth=true"
+            } > /tmp/github-packages.npmrc
       - run:
           name: Publish to GitHub Packages
           command: |
@@ -89,12 +95,12 @@ jobs:
               package_name="$(node -p "require('./${package_dir}/package.json').name")"
               package_version="$(node -p "require('./${package_dir}/package.json').version")"
 
-              if npm view "${package_name}@${package_version}" version --registry=https://npm.pkg.github.com >/dev/null 2>&1; then
+              if npm --userconfig=/tmp/github-packages.npmrc view "${package_name}@${package_version}" version >/dev/null 2>&1; then
                 echo "${package_name}@${package_version} already exists on GitHub Packages; skipping"
                 return
               fi
 
-              npm publish "./${package_dir}" --registry=https://npm.pkg.github.com
+              npm --userconfig=/tmp/github-packages.npmrc publish "./${package_dir}"
             }
 
             publish_if_missing sdk
