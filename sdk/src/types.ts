@@ -149,7 +149,7 @@ export type GetCodeFromWebsiteHandler =
 export type GetCodeFromWebsiteSettings = BaseSettings & {
   language?: "typescript";
   framework: "react" | "html";
-  styling: "tailwind" | "inline_styles" | "vanilla_css";
+  styling: "tailwind" | "inline_styles" | "vanilla_css" | "semantic_css";
   uiLibrary?: "shadcn";
 };
 
@@ -312,7 +312,8 @@ export type L2CParamsStyling =
   | "tailwind"
   | "inline-styles"
   | "inline_styles"
-  | "vanilla_css";
+  | "vanilla_css"
+  | "semantic_css";
 
 /**
  * @deprecated This type is deprecated and will be removed soon.
