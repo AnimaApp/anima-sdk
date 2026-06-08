@@ -493,6 +493,7 @@ export class Anima {
         },
         engine,
         htmlOptimizations: params.htmlOptimizations,
+        ...(params.settings.codegenSettings ?? {}),
       },
     };
 
