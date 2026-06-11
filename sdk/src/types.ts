@@ -112,9 +112,18 @@ export type GetCodeFromWebsiteParams = {
   images?: Array<{ url: string }>;
   dsId?: string;
   htmlOptimizations?: GetCodeFromWebsiteHTMLOptimizations;
+  subpages?: string[];
 
   // Experimental options, will change in the future.
   experimental_useNewReactEngine?: boolean;
+};
+
+export type DiscoverSubpagesParams = {
+  url: string;
+};
+
+export type DiscoverSubpagesResult = {
+  subpages: string[];
 };
 
 export type GetCodeFromWebsiteHTMLOptimizations = {

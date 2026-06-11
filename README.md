@@ -105,6 +105,35 @@ const { files } = await anima.generateCodeFromWebsite({
 console.log(files); // High-quality React code from your website!
 ```
 
+#### Discover Website Subpages
+
+```ts
+import { Anima } from "@animaapp/anima-sdk";
+
+const anima = new Anima({
+  auth: {
+    token: "Your Anima Token",
+    teamId: "Your Anima Team ID",
+  },
+});
+
+const { subpages } = await anima.discoverSubpages({
+  url: "https://www.example.com",
+});
+
+const { files } = await anima.generateCodeFromWebsite({
+  url: "https://www.example.com",
+  subpages,
+  settings: {
+    framework: "react",
+    language: "typescript",
+    styling: "tailwind",
+  },
+});
+
+console.log(files);
+```
+
 #### Convert Private Websites to Code (Early Preview)
 
 When you need to generate code from non-public websites (such as internal dashboards), the Anima SDK supports MHTML payloads. These can be generated using [Anima's Website Importer Chrome extension](https://chromewebstore.google.com/detail/anima-website-importer/paddhneaanoeljlmdepnheehdkaegblo).

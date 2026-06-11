@@ -53,6 +53,14 @@ export type SDKErrorReason =
 export type GetCodeFromWebsiteErrorReason = "Scraping is blocked" | "Unknown";
 
 /**
+ * Errors from website subpage discovery.
+ */
+export type DiscoverSubpagesErrorReason =
+  | "Subpage discovery requires a paid plan"
+  | "Website subpage discovery timed out after 10 seconds"
+  | "Failed to discover website subpages";
+
+/**
  * Errors from the Prompt To Code Flow
  */
 export type GetCodeFromPromptErrorReason =
@@ -77,6 +85,7 @@ export class CodegenError extends Error {
       | CodegenRouteErrorReason
       | SDKErrorReason
       | GetCodeFromWebsiteErrorReason
+      | DiscoverSubpagesErrorReason
       | GetCodeFromPromptErrorReason;
     status?: number;
     detail?: unknown;
