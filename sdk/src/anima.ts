@@ -566,6 +566,7 @@ export class Anima {
         },
         dsId: params.settings.dsId,
         fastMode: params.settings.fastMode,
+        imageMode: params.settings.imageMode,
         ...(params.settings.codegenSettings ?? {}),
       },
       webhookUrl: params.webhookUrl,
