@@ -193,6 +193,23 @@ export type GetCodeFromPromptSettings = BaseSettings & {
   uiLibrary?: "shadcn" | "custom_design_system";
   dsId?: string;
   fastMode?: boolean;
+  /**
+   * Hard override for the p2c routing classifier.
+   *
+   * - `true`  — Skip the LLM-driven classifier entirely and run the
+   *   image-to-code sub-agent directly. **Bypasses the multi-screen
+   *   safety check** — the caller is responsible for ensuring the
+   *   attached image is a single screen, not a multi-screen prototype /
+   *   moodboard. Saves ~1s + a vision LLM call per request.
+   * - `false` — Skip the classifier and force creative mode.
+   * - unset   — The agent decides automatically: a vision LLM call
+   *   classifies the intent and downgrades multi-screen inputs to
+   *   creative mode as a safety net.
+   *
+   * Requires at least one attached image. With no image attached this
+   * field has no effect.
+   */
+  imageMode?: boolean;
 };
 
 export type AttachToGenerationJobParams = {
