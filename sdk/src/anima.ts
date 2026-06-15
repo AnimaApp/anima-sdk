@@ -1,11 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { GetFileResponse } from "@figma/rest-api-spec";
 import { gzip } from "pako";
-import { CodegenError, CodegenRouteErrorReason } from "./errors";
+import {
+  CodegenError,
+  CodegenRouteErrorReason,
+  DiscoverSubpagesErrorReason,
+} from "./errors";
 import { validateSettings } from "./settings";
 import {
   AnimaSDKResult,
   AttachToGenerationJobParams,
+  DiscoverSubpagesParams,
+  DiscoverSubpagesResult,
   GetCodeFromWebsiteHandler,
   GetCodeFromWebsiteParams,
   GetCodeFromPromptHandler,
@@ -493,6 +499,7 @@ export class Anima {
         },
         engine,
         htmlOptimizations: params.htmlOptimizations,
+        subpages: params.subpages,
         ...(params.settings.codegenSettings ?? {}),
       },
     };
@@ -505,6 +512,48 @@ export class Anima {
       "l2c",
       signal
     );
+  }
+
+  async discoverSubpages(
+    params: DiscoverSubpagesParams,
+    signal?: AbortSignal,
+  ): Promise<DiscoverSubpagesResult> {
+    if (this.hasAuth() === false) {
+      throw new Error('It needs to set "auth" before calling this method.');
+    }
+
+    const response = await fetch(
+      `${this.#apiBaseAddress}/v1/l2c/discover-subpages`,
+      {
+        method: "POST",
+        headers: this.headers,
+        body: JSON.stringify(params),
+        signal,
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = errorText;
+
+      try {
+        const errorBody = JSON.parse(errorText);
+        if (typeof errorBody?.error === "string") {
+          errorMessage = errorBody.error;
+        } else if (typeof errorBody?.message === "string") {
+          errorMessage = errorBody.message;
+        }
+      } catch {}
+
+      throw new CodegenError({
+        name: "HTTP error from Anima API",
+        reason: (errorMessage ||
+          "Failed to discover website subpages") as DiscoverSubpagesErrorReason,
+        status: response.status,
+      });
+    }
+
+    return response.json() as Promise<DiscoverSubpagesResult>;
   }
 
   /**
