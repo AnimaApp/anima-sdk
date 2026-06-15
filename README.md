@@ -120,6 +120,7 @@ const anima = new Anima({
 const { subpages } = await anima.discoverSubpages({
   url: "https://www.example.com",
 });
+// subpages: Array<{ url: string }>
 
 const { files } = await anima.generateCodeFromWebsite({
   url: "https://www.example.com",

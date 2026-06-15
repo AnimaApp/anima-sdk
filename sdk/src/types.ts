@@ -98,6 +98,10 @@ export type GeneratingCodePayload = {
   files: AnimaFiles;
 };
 
+export type WebsiteSubpage = {
+  url: string;
+};
+
 export type GetCodeFromWebsiteParams = {
   url?: string;
   /** @deprecated Use `mhtmlUrl` instead. */
@@ -112,7 +116,7 @@ export type GetCodeFromWebsiteParams = {
   images?: Array<{ url: string }>;
   dsId?: string;
   htmlOptimizations?: GetCodeFromWebsiteHTMLOptimizations;
-  subpages?: string[];
+  subpages?: WebsiteSubpage[];
 
   // Experimental options, will change in the future.
   experimental_useNewReactEngine?: boolean;
@@ -123,7 +127,7 @@ export type DiscoverSubpagesParams = {
 };
 
 export type DiscoverSubpagesResult = {
-  subpages: string[];
+  subpages: WebsiteSubpage[];
 };
 
 export type GetCodeFromWebsiteHTMLOptimizations = {
