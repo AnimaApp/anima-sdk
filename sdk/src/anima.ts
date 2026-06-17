@@ -345,6 +345,23 @@ export class Anima {
               case "done": {
                 result.tokenUsage = (data as any).payload.tokenUsage;
                 result.sessionId = (data as any).payload.sessionId;
+                // Image-mode-only fields.
+                const metadata = (data as any).payload?.metadata;
+                if (metadata && typeof metadata === "object") {
+                  const viewport = (metadata as Record<string, unknown>).viewport;
+                  if (
+                    viewport === "desktop" ||
+                    viewport === "mobile" ||
+                    viewport === "tablet"
+                  ) {
+                    result.viewport = viewport;
+                  }
+                  const viewportReason = (metadata as Record<string, unknown>)
+                    .viewportReason;
+                  if (typeof viewportReason === "string") {
+                    result.viewportReason = viewportReason;
+                  }
+                }
                 return result as AnimaSDKResult;
               }
             }
