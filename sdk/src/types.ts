@@ -31,9 +31,16 @@ export type BaseResult = {
   tokenUsage: number;
 };
 
+export type ImageToCodeViewport = "desktop" | "mobile" | "tablet";
+
 export type AnimaSDKResult = BaseResult & {
   files: AnimaFiles;
   assets?: Array<{ name: string; url: string }>;
+  /**
+   * Image-mode only. 
+   */
+  viewport?: ImageToCodeViewport;
+  viewportReason?: string;
 };
 
 export type CodegenResult = BaseResult & {
