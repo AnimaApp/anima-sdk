@@ -31,7 +31,7 @@ describe("# validateSettings", () => {
         enableAutoSplit: true,
         autoSplitThreshold: 5,
         url: "https://example.com",
-        codegenSettings: { key: "value" },
+        codegenSettings: { timeoutMs: 45_000, key: "value" },
         designSystemId: "ds-123",
         disableMarkedForExport: false,
         enableDisplayDataId: true,
@@ -162,6 +162,16 @@ describe("# validateSettings", () => {
           framework: "react",
           styling: "tailwind",
           url: "not-a-url",
+        })
+      ).toThrow("Invalid codegen settings");
+    });
+
+    it("rejects timeoutMs above five minutes", () => {
+      expect(() =>
+        validateSettings({
+          framework: "react",
+          styling: "tailwind",
+          codegenSettings: { timeoutMs: 300_001 },
         })
       ).toThrow("Invalid codegen settings");
     });

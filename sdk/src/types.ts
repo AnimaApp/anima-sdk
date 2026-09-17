@@ -3,7 +3,7 @@ import type {
   GetCodeFromWebsiteErrorReason,
   GetCodeFromPromptErrorReason,
 } from "./errors";
-import type { CodegenSettings, BaseSettings } from "./settings";
+import type { CodegenSettings, BaseSettings, L2CCodegenSettings } from "./settings";
 
 export type JobType = "f2c" | "l2c" | "p2c";
 
@@ -166,7 +166,8 @@ export type GetCodeFromWebsiteHandler =
       onCodegenCompleted?: () => void;
     };
 
-export type GetCodeFromWebsiteSettings = BaseSettings & {
+export type GetCodeFromWebsiteSettings = {
+  codegenSettings?: L2CCodegenSettings;
   language?: "typescript";
   framework: "react" | "html";
   styling: "tailwind" | "inline_styles" | "vanilla_css" | "semantic_css";
