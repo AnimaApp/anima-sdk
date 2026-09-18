@@ -14,7 +14,6 @@ const CodegenSettingsSchema = z
     enableDisplayDataId: z.boolean().optional(),
     enableDisplayDataName: z.boolean().optional(),
     enableDisplayDataVariant: z.boolean().optional(),
-    codegenSettings: F2CCodegenSettingsSchema.optional(),
   })
   .and(
     z.union([
@@ -42,6 +41,7 @@ const CodegenSettingsSchema = z
         enableAutoSplit: z.boolean().optional(),
         autoSplitThreshold: z.number().optional(),
         url: z.string().url().optional(),
+        codegenSettings: F2CCodegenSettingsSchema.optional(),
         designSystemId: z.string().optional(),
       }),
       z.object({

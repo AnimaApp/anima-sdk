@@ -103,6 +103,16 @@ describe("# validateSettings", () => {
       expect(result.enableTranslation).toBe(true);
     });
 
+    it("preserves the existing html handling of codegenSettings", () => {
+      const result = validateSettings({
+        framework: "html",
+        styling: "plain_css",
+        codegenSettings: "ignored",
+      });
+
+      expect(result).not.toHaveProperty("codegenSettings");
+    });
+
     it.each(["plain_css", "inline_styles", "tailwind"] as const)(
       "accepts styling: %s for html",
       (styling) => {
