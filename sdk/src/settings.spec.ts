@@ -31,7 +31,7 @@ describe("# validateSettings", () => {
         enableAutoSplit: true,
         autoSplitThreshold: 5,
         url: "https://example.com",
-        codegenSettings: { key: "value" },
+        codegenSettings: { timeoutMs: 45_000, key: "value" },
         designSystemId: "ds-123",
         disableMarkedForExport: false,
         enableDisplayDataId: true,
@@ -47,6 +47,7 @@ describe("# validateSettings", () => {
       expect(result.autoSplitThreshold).toBe(5);
       expect(result.url).toBe("https://example.com");
       expect(result.designSystemId).toBe("ds-123");
+      expect(result.codegenSettings).toEqual({ timeoutMs: 45_000, key: "value" });
     });
 
     it("defaults allowAutoSelectFirstNode to true", () => {
@@ -100,6 +101,16 @@ describe("# validateSettings", () => {
       const result = validateSettings(settings);
 
       expect(result.enableTranslation).toBe(true);
+    });
+
+    it("preserves the existing html handling of codegenSettings", () => {
+      const result = validateSettings({
+        framework: "html",
+        styling: "plain_css",
+        codegenSettings: "ignored",
+      });
+
+      expect(result).not.toHaveProperty("codegenSettings");
     });
 
     it.each(["plain_css", "inline_styles", "tailwind"] as const)(
@@ -162,6 +173,16 @@ describe("# validateSettings", () => {
           framework: "react",
           styling: "tailwind",
           url: "not-a-url",
+        })
+      ).toThrow("Invalid codegen settings");
+    });
+
+    it("rejects timeoutMs above five minutes", () => {
+      expect(() =>
+        validateSettings({
+          framework: "react",
+          styling: "tailwind",
+          codegenSettings: { timeoutMs: 300_001 },
         })
       ).toThrow("Invalid codegen settings");
     });

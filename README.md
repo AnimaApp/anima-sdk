@@ -69,6 +69,9 @@ const { files } = await anima.generateCode({
     framework: "react",
     styling: "tailwind",
     uiLibrary: "shadcn",
+    codegenSettings: {
+      timeoutMs: 60_000,
+    },
   },
   tracking: {
     externalId: "x", // Optional, used to override the userId from auth, if provided
@@ -77,6 +80,8 @@ const { files } = await anima.generateCode({
 
 console.log(files); // High-quality React code from your Figma design!
 ```
+
+For Figma imports (F2C), `settings.codegenSettings.timeoutMs` sets the maximum job duration in milliseconds. It must be an integer from 1 to 300,000; when omitted, the server default applies.
 
 #### Convert Websites to Code
 
@@ -104,6 +109,34 @@ const { files } = await anima.generateCodeFromWebsite({
 
 console.log(files); // High-quality React code from your website!
 ```
+
+##### Website Scraping Limits
+
+Website imports support optional scraping limits through `settings.codegenSettings`:
+
+```ts
+const { files } = await anima.generateCodeFromWebsite({
+  url: "https://www.example.com",
+  settings: {
+    framework: "react",
+    language: "typescript",
+    styling: "tailwind",
+    codegenSettings: {
+      maxDomNodes: 5_000,
+      maxScrollHeight: 6_000,
+      timeoutMs: 60_000,
+    },
+  },
+});
+```
+
+| Option            | Range                  | Default   | Description                                      |
+| ----------------- | ---------------------- | --------- | ------------------------------------------------ |
+| `maxDomNodes`     | Integer from 1–10,000  | `10_000`  | Maximum number of DOM nodes to extract.          |
+| `maxScrollHeight` | Integer from 1–10,000  | `10_000`  | Maximum vertical scroll position, in pixels.     |
+| `timeoutMs`       | Integer from 1–300,000 | `300_000` | Maximum website scraping duration, milliseconds. |
+
+`maxDomNodes` and `maxScrollHeight` apply only to website imports (L2C). `timeoutMs` is supported for Figma and website imports, but not prompt imports (P2C).
 
 #### Discover Website Subpages
 

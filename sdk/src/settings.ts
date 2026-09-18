@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+const timeoutMs = z.number().int().positive().max(300_000);
+const F2CCodegenSettingsSchema = z.record(z.string(), z.unknown()).refine(
+  (settings) => settings.timeoutMs === undefined || timeoutMs.safeParse(settings.timeoutMs).success,
+  { path: ["timeoutMs"], message: "timeoutMs must be a positive integer no greater than 300000" }
+);
+
 const CodegenSettingsSchema = z
   .object({
     language: z.enum(["typescript", "javascript"]).optional(),
@@ -35,7 +41,7 @@ const CodegenSettingsSchema = z
         enableAutoSplit: z.boolean().optional(),
         autoSplitThreshold: z.number().optional(),
         url: z.string().url().optional(),
-        codegenSettings: z.record(z.string(), z.unknown()).optional(),
+        codegenSettings: F2CCodegenSettingsSchema.optional(),
         designSystemId: z.string().optional(),
       }),
       z.object({
