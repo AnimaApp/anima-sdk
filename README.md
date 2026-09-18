@@ -66,9 +66,8 @@ const { files } = await anima.generateCode({
   nodesId: ["1:2"],
   settings: {
     language: "typescript",
-    framework: "react",
-    styling: "tailwind",
-    uiLibrary: "shadcn",
+    framework: "html",
+    styling: "plain_css",
     codegenSettings: {
       timeoutMs: 60_000,
     },
@@ -78,7 +77,7 @@ const { files } = await anima.generateCode({
   },
 });
 
-console.log(files); // High-quality React code from your Figma design!
+console.log(files); // High-quality HTML code from your Figma design!
 ```
 
 For Figma imports (F2C), `settings.codegenSettings.timeoutMs` sets the maximum job duration in milliseconds. It must be an integer from 1 to 300,000; when omitted, the server default applies.
@@ -98,16 +97,16 @@ const anima = new Anima({
 const { files } = await anima.generateCodeFromWebsite({
   url: "https://www.example.com", // The URL of the website to convert
   settings: {
-    framework: "react",
+    framework: "html",
     language: "typescript",
-    styling: "tailwind",
+    styling: "vanilla_css",
   },
   tracking: {
     externalId: "x", // Optional, used to override the userId from auth, if provided
   },
 });
 
-console.log(files); // High-quality React code from your website!
+console.log(files); // High-quality HTML code from your website!
 ```
 
 ##### Website Scraping Limits
@@ -118,9 +117,9 @@ Website imports support optional scraping limits through `settings.codegenSettin
 const { files } = await anima.generateCodeFromWebsite({
   url: "https://www.example.com",
   settings: {
-    framework: "react",
+    framework: "html",
     language: "typescript",
-    styling: "tailwind",
+    styling: "vanilla_css",
     codegenSettings: {
       maxDomNodes: 5_000,
       maxScrollHeight: 6_000,
@@ -159,9 +158,9 @@ const { files } = await anima.generateCodeFromWebsite({
   url: "https://www.example.com",
   subpages,
   settings: {
-    framework: "react",
+    framework: "html",
     language: "typescript",
-    styling: "tailwind",
+    styling: "vanilla_css",
   },
 });
 
@@ -187,16 +186,16 @@ const anima = new Anima({
 const { files } = await anima.generateCodeFromWebsite({
   mhtmlUrl: "https://example.com/path/to/file.mhtml",
   settings: {
-    framework: "react",
+    framework: "html",
     language: "typescript",
-    styling: "tailwind",
+    styling: "vanilla_css",
   },
   tracking: {
     externalId: "x", // Optional, used to override the userId from auth, if provided
   },
 });
 
-console.log(files); // High-quality React code from your website!
+console.log(files); // High-quality HTML code from your website!
 ```
 
 #### Generate Code from Text Descriptions (Early Preview)
