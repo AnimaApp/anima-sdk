@@ -47,6 +47,7 @@ describe("# validateSettings", () => {
       expect(result.autoSplitThreshold).toBe(5);
       expect(result.url).toBe("https://example.com");
       expect(result.designSystemId).toBe("ds-123");
+      expect(result.codegenSettings).toEqual({ timeoutMs: 45_000, key: "value" });
     });
 
     it("defaults allowAutoSelectFirstNode to true", () => {

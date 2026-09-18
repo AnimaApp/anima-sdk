@@ -1,10 +1,10 @@
 import { z } from "zod";
 
-const F2CCodegenSettingsSchema = z
-  .object({
-    timeoutMs: z.number().int().positive().max(300_000).optional(),
-  })
-  .catchall(z.unknown());
+const timeoutMs = z.number().int().positive().max(300_000);
+const F2CCodegenSettingsSchema = z.record(z.string(), z.unknown()).refine(
+  (settings) => settings.timeoutMs === undefined || timeoutMs.safeParse(settings.timeoutMs).success,
+  { path: ["timeoutMs"], message: "timeoutMs must be a positive integer no greater than 300000" }
+);
 
 const CodegenSettingsSchema = z
   .object({
@@ -56,19 +56,8 @@ export type BaseSettings = {
   codegenSettings?: Record<string, unknown>;
 };
 
-export type F2CCodegenSettings = Record<string, unknown> & {
-  timeoutMs?: number;
-};
-
-export type L2CCodegenSettings = Record<string, unknown> & {
-  maxDomNodes?: number;
-  maxScrollHeight?: number;
-  timeoutMs?: number;
-};
-
 // We don't use the z.infer method here because the types returned by zod aren't ergonic
-export type CodegenSettings = {
-  codegenSettings?: F2CCodegenSettings;
+export type CodegenSettings = BaseSettings & {
   language?: "typescript" | "javascript";
   model?: string;
   framework: "react" | "html";
