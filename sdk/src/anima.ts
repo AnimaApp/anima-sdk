@@ -23,6 +23,7 @@ import {
   SSEGetCodeFromPromptMessage,
   SSEGetCodeFromFigmaMessage,
   JobType,
+  StopJobResult,
 } from "./types";
 import { isNodeCodegenCompatible } from "./utils/isNodeCodegenCompatible";
 import { FigmaRestApi } from "./FigmaRestApi";
@@ -239,7 +240,7 @@ export class Anima {
                 typeof handler === "function"
                   ? handler(data)
                   : handler.onQueueing?.({
-                      sessionId: (data as any).sessionId,
+                      sessionId: data.payload.sessionId,
                     });
                 break;
               }
@@ -699,5 +700,27 @@ export class Anima {
       messageType,
       signal
     );
+  }
+
+  /** Stop a queued or running Figma, website, or prompt generation job. */
+  async stopJob({ sessionId }: AttachToGenerationJobParams): Promise<StopJobResult> {
+    if (!this.hasAuth()) {
+      throw new Error('It needs to set "auth" before calling this method.');
+    }
+
+    const response = await fetch(
+      `${this.#apiBaseAddress}/v1/jobs/${encodeURIComponent(sessionId)}/stop`,
+      { method: "POST", headers: this.headers }
+    );
+
+    if (!response.ok) {
+      throw new CodegenError({
+        name: "HTTP error from Anima API",
+        reason: (await response.text()) as CodegenRouteErrorReason,
+        status: response.status,
+      });
+    }
+
+    return response.json() as Promise<StopJobResult>;
   }
 }
