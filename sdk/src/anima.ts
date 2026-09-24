@@ -240,7 +240,7 @@ export class Anima {
                 typeof handler === "function"
                   ? handler(data)
                   : handler.onQueueing?.({
-                      sessionId: (data as any).sessionId,
+                      sessionId: data.payload.sessionId,
                     });
                 break;
               }

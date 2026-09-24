@@ -49,3 +49,26 @@ describe("Anima.stopJob", () => {
     );
   });
 });
+
+it("passes the queued session ID to callers so they can stop the job", async () => {
+  const events = [
+    { type: "queueing", payload: { sessionId: "queued-1" } },
+    { type: "done", payload: { sessionId: "queued-1", tokenUsage: 0 } },
+  ];
+  vi.stubGlobal(
+    "fetch",
+    vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join(""),
+        ),
+      ),
+  );
+  const onQueueing = vi.fn();
+  const anima = new Anima({ auth: { token: "token-1", teamId: "team-1" } });
+
+  await anima.attachToGenerationJob({ sessionId: "queued-1" }, { onQueueing });
+
+  expect(onQueueing).toHaveBeenCalledWith({ sessionId: "queued-1" });
+});
