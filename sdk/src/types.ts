@@ -7,6 +7,10 @@ import type { CodegenSettings, BaseSettings } from "./settings";
 
 export type JobType = "f2c" | "l2c" | "p2c";
 
+export type StopJobResult = {
+  status: "cancelled" | "cancellation_requested";
+};
+
 export type AnimaFiles = Record<
   string,
   {
