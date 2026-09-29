@@ -83,6 +83,17 @@ console.log(files); // High-quality React code from your Figma design!
 
 For Figma imports (F2C), `settings.codegenSettings.timeoutMs` sets the maximum job duration in milliseconds. It must be an integer from 1 to 300,000; when omitted, the server default applies.
 
+#### Stop a generation job
+
+Save the `sessionId` from an `onQueueing` or `onStart` callback, then stop the queued or running job:
+
+```ts
+const { status } = await anima.stopJob({ sessionId });
+// status: "cancelled" (queued) or "cancellation_requested" (running)
+```
+
+Aborting the generation request only disconnects the client; call `stopJob` to stop the server-side job.
+
 #### Convert Websites to Code
 
 ```ts
